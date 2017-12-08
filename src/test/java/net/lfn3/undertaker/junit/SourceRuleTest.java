@@ -2,6 +2,7 @@ package net.lfn3.undertaker.junit;
 
 import net.lfn3.undertaker.junit.generators.CodePoints;
 import net.lfn3.undertaker.junit.sources.ByteSource;
+import net.lfn3.undertaker.junit.sources.IntSource;
 import org.junit.*;
 
 import java.time.Instant;
@@ -314,6 +315,17 @@ public class SourceRuleTest {
         final ClassWithStaticConstructor aClass =
                 source.generate(s -> ClassWithStaticConstructor.constructor(s.reflectively(ClassWithConstructor.class)));
         Assert.assertNotNull(aClass);
+    }
+
+    @Test
+    public void canGetSet() throws Exception {
+        final Set<Integer> set = source.getSet(IntSource::getInt);
+        Assert.assertNotNull(set);
+
+        set.forEach(anInt -> {
+            Assert.assertTrue(anInt >= Integer.MIN_VALUE);
+            Assert.assertTrue(anInt <= Integer.MAX_VALUE);
+        });
     }
 
     public static <T, V> Supplier<V> bind(Function<T, V> f, T input)

@@ -8,7 +8,7 @@
                    [java.util.Map] []})
   (:import (org.junit.runners.model Statement)
            (org.junit.runner Description JUnitCore Computer Request)
-           (java.util List ArrayList Arrays Map HashMap Map$Entry Collection)
+           (java.util List ArrayList Arrays Map HashMap Map$Entry Collection Set)
            (java.util.function Function Supplier BiFunction)
            (java.lang.reflect Modifier Constructor)
            (net.lfn3.undertaker.junit Seed Trials)
@@ -186,6 +186,10 @@
    (if (instance? BiFunction valGen)
      (undertaker/map-of #(.apply keyGen this) #(.apply valGen this %1) 0 64 {:value-gen-takes-key-as-arg true})
      (undertaker/map-of #(.apply keyGen this) #(.apply valGen this)))))
+
+(defn ^Set -getSet
+  ([this ^Function generator]
+   (undertaker/set-of #(.apply generator this) 0 64)))
 
 (defn -getArray
   ([this ^Class c ^Function generator] (-getArray this c generator 0 64))
