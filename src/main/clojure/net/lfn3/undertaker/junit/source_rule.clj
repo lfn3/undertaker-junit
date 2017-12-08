@@ -122,7 +122,7 @@
   ([this min max] (undertaker/long min max)))
 
 (defn ^boolean -getBool
-  ([this] (undertaker/bool)))
+  ([this] (undertaker/boolean)))
 
 (defn ^char -getChar
   ([this] (undertaker/char)))
@@ -193,10 +193,10 @@
   ([this ^Class c ^Function generator min max] (into-array c (undertaker/vec-of #(.apply generator this) min max))))
 
 (defn -getEnum
-  ([this ^Class c] (undertaker/from (.getEnumConstants c))))
+  ([this ^Class c] (undertaker/elements (.getEnumConstants c))))
 
 (defn -from
-  ([this ^Collection c] (undertaker/from c)))
+  ([this ^Collection c] (undertaker/elements c)))
 
 (defn -generate
   ([this ^Generator g] (.apply g this)))
@@ -231,7 +231,7 @@
                                (throw (IllegalArgumentException.
                                         (str "Class " c " did not have any public constructors "
                                              "with only concrete parameters that were not " c "."))))
-                             (undertaker/from constructors))
+                             (undertaker/elements constructors))
                            c)]
          (->> constructor
               (.getParameters)
@@ -264,7 +264,7 @@
 (get-array-fn "[F" "float")
 (get-array-fn "[I" "int")
 (get-array-fn "[S" "short")
-(get-array-fn "[Z" "bool" "boolean-array")
+(get-array-fn "[Z" "boolean" "boolean-array")
 
 (defn generate-array-reflectively [this array-class-string]
   (let [class (Class/forName array-class-string)]
@@ -283,7 +283,7 @@
       (or (= class Float) (= class Float/TYPE)) (undertaker/float)
       (or (= class Double) (= class Double/TYPE)) (undertaker/double)
       (or (= class Character) (= class Character/TYPE)) (undertaker/char)
-      (or (= class Boolean) (= class Boolean/TYPE)) (undertaker/bool)
+      (or (= class Boolean) (= class Boolean/TYPE)) (undertaker/boolean)
       (= class String) (undertaker/string)
 
       (= class (Class/forName "[J")) (-getLongArray this)
@@ -293,7 +293,7 @@
       (= class (Class/forName "[F")) (-getFloatArray this)
       (= class (Class/forName "[I")) (-getIntArray this)
       (= class (Class/forName "[S")) (-getShortArray this)
-      (= class (Class/forName "[Z")) (-getBoolArray this)
+      (= class (Class/forName "[Z")) (-getBooleanArray this)
 
       (str/starts-with? (.getName class) "[L") (->> class
                                                     (.getName)
