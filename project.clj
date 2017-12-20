@@ -17,6 +17,6 @@
 
   :aot [net.lfn3.undertaker.junit.source-rule]
 
-  :profiles {:provided {:dependencies [[org.clojure/clojure "1.9.0-RC2"]]}
+  :profiles {:provided {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :test {:java-source-paths ^:replace ["src/test/java"]}}
   :aliases {"junit" ["do" ["clean"] ["compile"] ["with-profile" "test,provided" "junit"]]})
