@@ -76,18 +76,16 @@ public class SourceRuleTest {
         Assert.assertTrue(anInt == 0 || anInt == 1);
     }
 
-    @Test
-    @Ignore
+    @Test(expected = AssertionError.class)
     public void canFail()
     {
         Assert.assertTrue(false);
     }
 
-    @Test
-    @Ignore
+    @Test(expected = AssertionError.class)
     public void canFailWithNiceishMessageWhenUsingAGenerator()
     {
-        Assert.assertTrue(source.getBool());
+        Assert.assertNull(source.getBool());
     }
 
     @Test

@@ -85,12 +85,14 @@
                                                   (map (fn [f] (-> (.getException f) ;TODO: process failures in a function
                                                                    (throw))))
                                                   (dorun))))]
-          (when (false? (::undertaker/result result))
+          (when (false? (get-in result [::undertaker/initial-results ::undertaker/result]))
             (let [test-name (first (str/split (.getDisplayName description) #"\("))
-                  message (undertaker/format-results test-name result)]
+                  message (undertaker/format-results test-name result)
+                  cause (or (get-in result [::undertaker/shrunk-results ::undertaker/cause])
+                            (get-in result [::undertaker/initial-results ::undertaker/cause]))]
               (throw (override-delegate
                        java.lang.Throwable
-                       (::undertaker/cause result)
+                       cause
                        (getMessage [] message))))))
         (.evaluate base)))))
 
