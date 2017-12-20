@@ -238,7 +238,7 @@
                                         (str "Class " c " did not have any public constructors "
                                              "with only concrete parameters that were not " c "."))))
                              (undertaker/elements constructors))
-                           c)]
+                           c)]                              ;Assume c is a constructor
          (->> constructor
               (.getParameters)
               (map #(.getType %1))
@@ -306,4 +306,7 @@
                                                     (drop 2)
                                                     (apply str)
                                                     (generate-array-reflectively this))
+
+      (.isEnum class) (-getEnum this class)
+
       :default nil)))

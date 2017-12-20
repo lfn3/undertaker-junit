@@ -233,6 +233,14 @@ public class SourceRuleTest {
     }
 
     @Test
+    public void canReflectivelyGetAnEnum() throws Exception
+    {
+        AnEnum anEnum = source.reflectively(AnEnum.class);
+
+        Assert.assertTrue(anEnum == AnEnum.A || anEnum == AnEnum.B || anEnum == AnEnum.C);
+    }
+
+    @Test
     public void canGetFromCollection() throws Exception
     {
         AnEnum anEnum = source.from(AnEnum.values());
