@@ -8,17 +8,15 @@
                    [java.util.Map] []})
   (:import (org.junit.runners.model Statement)
            (org.junit.runner Description JUnitCore Computer Request)
-           (java.util List ArrayList Arrays Map HashMap Map$Entry Collection Set)
-           (java.util.function Function Supplier BiFunction)
-           (java.lang.reflect Modifier Constructor)
+           (java.util List ArrayList Map Collection Set)
+           (java.util.function Function BiFunction)
+           (java.lang.reflect Modifier)
            (net.lfn3.undertaker.junit Seed Trials)
            (net.lfn3.undertaker.junit Generator)
-           (net.lfn3.undertaker.junit.generators IntGenerator)
-           (javafx.util Pair))
+           (net.lfn3.undertaker.junit.generators IntGenerator))
   (:require [net.lfn3.undertaker.core :as undertaker]
             [net.lfn3.undertaker.source :as source]
-            [clojure.string :as str]
-            [clojure.reflect :as reflect]))
+            [clojure.string :as str]))
 
 (defn -init
   ([] (-init {}))
@@ -54,7 +52,7 @@
                              (map (fn [[f arities]]
                                     (let [by-arity-length (group-by (fn [[_ args-vec]] (count args-vec)) arities)]
                                       (apply list f (->> by-arity-length
-                                                         (map (fn [[k arities]] (first arities)))
+                                                         (map (fn [[_ arities]] (first arities)))
                                                          (map (fn [[_ args-vec body]] `(~args-vec (~@body)))))))))
                              (into []))]
     `(let [~d ~delegate]
@@ -67,14 +65,14 @@
                 (.value))
         default)))
 
-(defn ^Statement -apply [this ^Statement base ^Description description]
+(defn ^Statement -apply [_ ^Statement base ^Description description]
   (proxy [Statement] []
     (evaluate []
       (if (not *nested*)                                    ;Check we're not already inside this rule
         (let [seed (get-annotation-value Seed description (undertaker/next-seed (System/nanoTime)))
               trials (get-annotation-value Trials description 1000)
               junit (JUnitCore.)
-              computer (Computer.)
+              _ (Computer.)
               class (resolve (symbol (.getClassName description)))
               test-request (Request/method class (.getMethodName description))
               result (undertaker/run-prop {:seed       seed
@@ -91,7 +89,7 @@
                   cause (or (get-in result [::undertaker/shrunk-results ::undertaker/cause])
                             (get-in result [::undertaker/initial-results ::undertaker/cause]))]
               (throw (override-delegate
-                       java.lang.Throwable
+                       Throwable
                        cause
                        (getMessage [] message))))))
         (.evaluate base)))))
@@ -105,41 +103,41 @@
 (defn ^byte -getByte
   ([this] (-getByte this Byte/MIN_VALUE Byte/MAX_VALUE))
   ([this max] (-getByte this Byte/MIN_VALUE max))
-  ([this min max] (undertaker/byte min max)))
+  ([_ min max] (undertaker/byte min max)))
 
 (defn ^short -getShort
   ([this] (-getShort this Short/MIN_VALUE Short/MAX_VALUE))
   ([this max] (-getShort this Integer/MIN_VALUE max))
-  ([this min max] (undertaker/short min max)))
+  ([_ min max] (undertaker/short min max)))
 
 (defn ^int -getInt
   ([this] (-getInt this Integer/MIN_VALUE Integer/MAX_VALUE))
   ([this max] (-getInt this Integer/MIN_VALUE max))
-  ([this min max] (undertaker/int min max))
-  ([this min max & more-ranges] (apply undertaker/int min max more-ranges)))
+  ([_ min max] (undertaker/int min max))
+  ([_ min max & more-ranges] (apply undertaker/int min max more-ranges)))
 
 (defn ^long -getLong
   ([this] (-getLong this Long/MIN_VALUE Long/MAX_VALUE))
   ([this max] (-getLong this Long/MIN_VALUE max))
-  ([this min max] (undertaker/long min max)))
+  ([_ min max] (undertaker/long min max)))
 
 (defn ^boolean -getBool
-  ([this] (undertaker/boolean)))
+  ([_] (undertaker/boolean)))
 
 (defn ^char -getChar
-  ([this] (undertaker/char)))
+  ([_] (undertaker/char)))
 
 (defn ^char -getAsciiChar
-  ([this] (undertaker/char-ascii)))
+  ([_] (undertaker/char-ascii)))
 
 (defn ^char -getAlphanumericChar
-  ([this] (undertaker/char-alphanumeric)))
+  ([_] (undertaker/char-alphanumeric)))
 
 (defn ^char -getAlphaChar
-  ([this] (undertaker/char-alpha)))
+  ([_] (undertaker/char-alpha)))
 
 (defn ^String -getString
-  ([this] (undertaker/string))
+  ([_] (undertaker/string))
   ([this ^IntGenerator intGen] (-getString this intGen 0 undertaker/default-string-max-size))
   ([this ^IntGenerator intGen max] (-getString this intGen 0 max))
   ([this ^IntGenerator intGen min max]
@@ -149,34 +147,34 @@
         (String.))))
 
 (defn ^String -getAsciiString
-  ([this] (undertaker/string-ascii))
-  ([this max] (undertaker/string-ascii 0 max))
-  ([this min max] (undertaker/string-ascii min max)))
+  ([_] (undertaker/string-ascii))
+  ([_ max] (undertaker/string-ascii 0 max))
+  ([_ min max] (undertaker/string-ascii min max)))
 
 (defn ^String -getAlphanumericString
-  ([this] (undertaker/string-alphanumeric))
-  ([this max] (undertaker/string-alphanumeric 0 max))
-  ([this min max] (undertaker/string-alphanumeric min max)))
+  ([_] (undertaker/string-alphanumeric))
+  ([_ max] (undertaker/string-alphanumeric 0 max))
+  ([_ min max] (undertaker/string-alphanumeric min max)))
 
 (defn ^String -getAlphaString
-  ([this] (undertaker/string-alpha))
-  ([this max] (undertaker/string-alpha 0 max))
-  ([this min max] (undertaker/string-alpha min max)))
+  ([_] (undertaker/string-alpha))
+  ([_ max] (undertaker/string-alpha 0 max))
+  ([_ min max] (undertaker/string-alpha min max)))
 
 (defn ^float -getFloat
   ([this] (-getFloat this (- Float/MAX_VALUE) Float/MAX_VALUE))
   ([this max] (-getFloat this (- Float/MAX_VALUE) max))
-  ([this min max] (undertaker/float min max)))
+  ([_ min max] (undertaker/float min max)))
 
 (defn ^double -getDouble
   ([this] (-getDouble this (- Double/MAX_VALUE) Double/MAX_VALUE))
   ([this max] (-getDouble this (- Double/MAX_VALUE) max))
-  ([this min max] (undertaker/double min max)))
+  ([_ min max] (undertaker/double min max)))
 
 (defn ^double -getRealDouble
   ([this] (-getRealDouble this (- Double/MAX_VALUE) Double/MAX_VALUE))
   ([this max] (-getRealDouble this (- Double/MAX_VALUE) max))
-  ([this min max] (undertaker/real-double min max)))
+  ([_ min max] (undertaker/real-double min max)))
 
 (defn ^List -getList
   ([this ^Function generator] (-getList this generator 0 64))
@@ -199,10 +197,10 @@
   ([this ^Class c ^Function generator min max] (into-array c (undertaker/vec-of #(.apply generator this) min max))))
 
 (defn -getEnum
-  ([this ^Class c] (undertaker/elements (.getEnumConstants c))))
+  ([_ ^Class c] (undertaker/elements (.getEnumConstants c))))
 
 (defn -from
-  ([this ^Collection c] (undertaker/elements c)))
+  ([_ ^Collection c] (undertaker/elements c)))
 
 (defn -generate
   ([this ^Generator g] (.apply g this)))
@@ -262,11 +260,11 @@
         generator-name (symbol "undertaker" type-str)]
     `(defn ^{:tag type-hint} ~fn-name
        ([_#] (~array-fn-name (undertaker/vec-of ~generator-name)))
-       ([this# ^java.util.function.Function generator#]
+       ([this# ^Function generator#]
          (~array-fn-name (undertaker/vec-of #(.apply generator# this#))))
-       ([this# ^java.util.function.Function generator# min#]
+       ([this# ^Function generator# min#]
          (~array-fn-name (undertaker/vec-of #(.apply generator# this#)) min (+ min 64)))
-       ([this# ^java.util.function.Function generator# min# max#]
+       ([this# ^Function generator# min# max#]
          (~array-fn-name (undertaker/vec-of #(.apply generator# this#)) min max)))))
 
 (get-array-fn "[J" "long")
