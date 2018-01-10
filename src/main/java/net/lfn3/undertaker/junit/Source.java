@@ -28,6 +28,7 @@ public interface Source extends BoolSource,
                                 EnumSource,
                                 FromCollectionSource,
                                 ReflectiveSource,
+                                NullableSource,
                                 TestRule {
     void pushInterval();
 

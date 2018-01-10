@@ -3,6 +3,7 @@ package net.lfn3.undertaker.junit;
 import net.lfn3.undertaker.junit.generators.CodePoints;
 import net.lfn3.undertaker.junit.sources.ByteSource;
 import net.lfn3.undertaker.junit.sources.IntSource;
+import net.lfn3.undertaker.junit.sources.StringSource;
 import org.junit.*;
 
 import java.time.Instant;
@@ -334,9 +335,10 @@ public class SourceRuleTest {
         });
     }
 
-    public static <T, V> Supplier<V> bind(Function<T, V> f, T input)
-    {
-        return () -> f.apply(input);
+    @Test
+    public void canGetNullable() throws Exception {
+        final String nullableString = source.getNullable(StringSource::getString);
+        Assert.assertTrue(nullableString == null || nullableString != null);
     }
 
     public static Date generateDate(Source s)

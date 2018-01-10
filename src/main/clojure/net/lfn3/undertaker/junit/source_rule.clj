@@ -207,12 +207,9 @@
 (defn -generate
   ([this ^Generator g] (.apply g this)))
 
-(defn -generate-Class
-  ([this ^Class c]
-   (let [{:keys [class->generator]} (.state this)]
-     (if-let [g (get class->generator c)]
-       (.apply g this)
-       (throw (ex-info (str "Could not find generator for " (.getName c) " in Source's class->generator map") {}))))))
+(defn -getNullable
+  ([this ^Generator g] (undertaker/frequency [[20 #(.apply g this)
+                                               1 (constantly nil)]])))
 
 (def generate-from-class)
 
