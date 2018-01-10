@@ -222,33 +222,35 @@
 
 (defn -reflectively
   ([this c]
-   (if-let [generated (and (class? c) (generate-from-class this c))]
-     generated
-     (do
-       (when (and (class? c) (.isInterface c))
-         (throw (IllegalArgumentException. (str "Can't reflectively generate an interface. "
-                                                "Please pass a concrete class instead of " c))))
-       (let [constructor (if (class? c)
-                           (let [constructors (->> c
-                                                   (.getConstructors)
-                                                   (filter #(->> %1
-                                                                 (.getParameters)
-                                                                 (map (fn [p] (.getType p)))
-                                                                 (not-any? (fn [parameter-class]
-                                                                             (or (.isInterface parameter-class)
-                                                                                 (= c parameter-class)))))))]
-                             (when (empty? constructors)
-                               (throw (IllegalArgumentException.
-                                        (str "Class " c " did not have any public constructors "
-                                             "with only concrete parameters that were not " c "."))))
-                             (undertaker/elements constructors))
-                           c)]                              ;Assume c is a constructor
-         (->> constructor
-              (.getParameters)
-              (map #(.getType %1))
-              (map #(-reflectively this %1))
-              (into-array Object)
-              (.newInstance constructor)))))))
+   (let [is-class? (class? c)
+         generated (and is-class? (generate-from-class this c))]
+     (if (and is-class? (not= ::not-genned generated))
+       generated
+       (do
+         (when (and is-class? (.isInterface c))
+           (throw (IllegalArgumentException. (str "Can't reflectively generate an interface. "
+                                                  "Please pass a concrete class instead of " c))))
+         (let [constructor (if is-class?
+                             (let [constructors (->> c
+                                                     (.getConstructors)
+                                                     (filter #(->> %1
+                                                                   (.getParameters)
+                                                                   (map (fn [p] (.getType p)))
+                                                                   (not-any? (fn [parameter-class]
+                                                                               (or (.isInterface parameter-class)
+                                                                                   (= c parameter-class)))))))]
+                               (when (empty? constructors)
+                                 (throw (IllegalArgumentException.
+                                          (str "Class " c " did not have any public constructors "
+                                               "with only concrete parameters that were not " c "."))))
+                               (undertaker/elements constructors))
+                             c)]                            ;Assume c is a constructor
+           (->> constructor
+                (.getParameters)
+                (map #(.getType %1))
+                (map #(-reflectively this %1))
+                (into-array Object)
+                (.newInstance constructor))))))))
 
 (defmacro get-array-fn [type-hint type-str & [array-fn-name]]
   (let [fn-name (symbol (str "-get" (str/upper-case (first type-str))
@@ -313,4 +315,4 @@
 
       (.isEnum class) (-getEnum this class)
 
-      :default nil)))
+      :default ::not-genned)))

@@ -311,6 +311,9 @@ public class SourceRuleTest {
     {
         final Long aLong = source.reflectively(Long.class);
         final Long anotherLong = source.reflectively(long.class);
+        
+        final Boolean aBool = source.reflectively(Boolean.class);
+        final boolean anotherBool = source.reflectively(boolean.class);
     }
 
     @Test
