@@ -12,9 +12,9 @@ public interface ShortArraySource {
     {
         return getShortArray(generator, 0, 64);
     }
-    default short[] getShortArray(ToShortFunction<Source> generator, int minSize)
+    default short[] getShortArray(ToShortFunction<Source> generator, int size)
     {
-        return getShortArray(generator, minSize, minSize + 64);
+        return getShortArray(generator, size, size);
     }
     short[] getShortArray(ToShortFunction<Source> generator, int minSize, int maxSize);
 }

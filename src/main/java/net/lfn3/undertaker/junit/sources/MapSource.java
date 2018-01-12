@@ -8,5 +8,10 @@ import java.util.function.BiFunction;
 
 public interface MapSource {
     <K, V> Map<K, V> getMap(Generator<K> keyGenerator, Generator<V> valueGenerator);
+    <K, V> Map<K, V> getMap(Generator<K> keyGenerator, Generator<V> valueGenerator, int size);
+    <K, V> Map<K, V> getMap(Generator<K> keyGenerator, Generator<V> valueGenerator, int minSize, int maxSize);
+
     <K, V> Map<K, V> getMap(Generator<K> keyGenerator, BiFunction<Source, K, V> valueGenerator);
+    <K, V> Map<K, V> getMap(Generator<K> keyGenerator, BiFunction<Source, K, V> valueGenerator, int size);
+    <K, V> Map<K, V> getMap(Generator<K> keyGenerator, BiFunction<Source, K, V> valueGenerator, int minSize, int maxSize);
 }

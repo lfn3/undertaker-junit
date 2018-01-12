@@ -8,9 +8,9 @@ public interface ArraySource {
         return getArray(klass, generator, 0, 64);
     }
 
-    default <T> T[] getArray(Class<T> klass, Generator<T> generator, int max)
+    default <T> T[] getArray(Class<T> klass, Generator<T> generator, int size)
     {
-        return getArray(klass, generator, 0, max);
+        return getArray(klass, generator, size, size);
     }
 
     <T> T[] getArray(Class<T> klass, Generator<T> generator, int min, int max);

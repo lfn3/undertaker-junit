@@ -10,8 +10,8 @@ public interface ListSource
         return getList(generator, 0, 64);
     }
 
-    default <T> List<T> getList(Generator<T> generator, int max) {
-        return getList(generator, 0, max);
+    default <T> List<T> getList(Generator<T> generator, int size) {
+        return getList(generator, size, size);
     }
 
     <T> List<T> getList(Generator<T> generator, int min, int max);

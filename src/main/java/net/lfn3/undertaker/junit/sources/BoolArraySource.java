@@ -12,9 +12,9 @@ public interface BoolArraySource {
     {
         return getBooleanArray(generator, 0, 64);
     }
-    default boolean[] getBooleanArray(ToBoolFunction<Source> generator, int minSize)
+    default boolean[] getBooleanArray(ToBoolFunction<Source> generator, int size)
     {
-        return getBooleanArray(generator, minSize, minSize + 64);
+        return getBooleanArray(generator, size, size);
     }
     boolean[] getBooleanArray(ToBoolFunction<Source> generator, int minSize, int maxSize);
 }

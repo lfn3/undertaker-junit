@@ -13,7 +13,7 @@
            (java.lang.reflect Modifier)
            (net.lfn3.undertaker.junit Seed Trials)
            (net.lfn3.undertaker.junit Generator)
-           (net.lfn3.undertaker.junit.generators IntGenerator))
+           (net.lfn3.undertaker.junit.generators IntGenerator CodePoints))
   (:require [net.lfn3.undertaker.core :as undertaker]
             [net.lfn3.undertaker.source :as source]
             [clojure.string :as str]))
@@ -137,29 +137,15 @@
   ([_] (undertaker/char-alpha)))
 
 (defn ^String -getString
-  ([_] (undertaker/string))
+  ([this] (-getString this CodePoints/ANY 0 undertaker/default-string-max-size))
   ([this ^IntGenerator intGen] (-getString this intGen 0 undertaker/default-string-max-size))
-  ([this ^IntGenerator intGen max] (-getString this intGen 0 max))
+  ([this ^IntGenerator intGen size] (-getString this intGen size size))
   ([this ^IntGenerator intGen min max]
-   (->> (undertaker/vec-of #(.applyAsInt intGen this) min max)
-        (map char)
-        (char-array)
-        (String.))))
-
-(defn ^String -getAsciiString
-  ([_] (undertaker/string-ascii))
-  ([_ max] (undertaker/string-ascii 0 max))
-  ([_ min max] (undertaker/string-ascii min max)))
-
-(defn ^String -getAlphanumericString
-  ([_] (undertaker/string-alphanumeric))
-  ([_ max] (undertaker/string-alphanumeric 0 max))
-  ([_ min max] (undertaker/string-alphanumeric min max)))
-
-(defn ^String -getAlphaString
-  ([_] (undertaker/string-alpha))
-  ([_ max] (undertaker/string-alpha 0 max))
-  ([_ min max] (undertaker/string-alpha min max)))
+   (undertaker/with-interval
+     (->> (undertaker/vec-of #(.applyAsInt intGen this) min max)
+          (map char)
+          (char-array)
+          (String.)))))
 
 (defn ^float -getFloat
   ([this] (-getFloat this (- Float/MAX_VALUE) Float/MAX_VALUE))
@@ -178,22 +164,25 @@
 
 (defn ^List -getList
   ([this ^Function generator] (-getList this generator 0 64))
-  ([this ^Function generator max] (-getList this generator 0 max))
+  ([this ^Function generator size] (-getList this generator size size))
   ([this ^Function generator min max] (ArrayList. (undertaker/vec-of #(.apply generator this) min max))))
 
 (defn ^Map -getMap
-  ([this ^Function keyGen valGen]
+  ([this ^Function keyGen valGen] (-getMap this keyGen valGen 0 undertaker/default-collection-max-size))
+  ([this ^Function keyGen valGen size] (-getMap this keyGen valGen size size))
+  ([this ^Function keyGen valGen minSize maxSize]
    (if (instance? BiFunction valGen)
-     (undertaker/map-of #(.apply keyGen this) #(.apply valGen this %1) 0 64 {:value-gen-takes-key-as-arg true})
-     (undertaker/map-of #(.apply keyGen this) #(.apply valGen this)))))
+     (undertaker/map-of #(.apply keyGen this) #(.apply valGen this %1) minSize maxSize {:value-gen-takes-key-as-arg true})
+     (undertaker/map-of #(.apply keyGen this) #(.apply valGen this) minSize maxSize))))
 
 (defn ^Set -getSet
-  ([this ^Function generator]
-   (undertaker/set-of #(.apply generator this) 0 64)))
+  ([this ^Function generator] (-getSet this generator 0 undertaker/default-collection-max-size))
+  ([this ^Function generator size] (-getSet this generator size size))
+  ([this ^Function generator minSize maxSize] (undertaker/set-of #(.apply generator this) minSize maxSize)))
 
 (defn -getArray
   ([this ^Class c ^Function generator] (-getArray this c generator 0 64))
-  ([this ^Class c ^Function generator max] (-getArray this c generator 0 max))
+  ([this ^Class c ^Function generator size] (-getArray this c generator size size))
   ([this ^Class c ^Function generator min max] (into-array c (undertaker/vec-of #(.apply generator this) min max))))
 
 (defn -getEnum
@@ -262,10 +251,10 @@
        ([_#] (~array-fn-name (undertaker/vec-of ~generator-name)))
        ([this# ^Function generator#]
          (~array-fn-name (undertaker/vec-of #(.apply generator# this#))))
-       ([this# ^Function generator# min#]
-         (~array-fn-name (undertaker/vec-of #(.apply generator# this#)) min (+ min 64)))
+       ([this# ^Function generator# size#]
+         (~array-fn-name (undertaker/vec-of #(.apply generator# this#) size# size#)))
        ([this# ^Function generator# min# max#]
-         (~array-fn-name (undertaker/vec-of #(.apply generator# this#)) min max)))))
+         (~array-fn-name (undertaker/vec-of #(.apply generator# this#) min# max#))))))
 
 (get-array-fn "[J" "long")
 (get-array-fn "[B" "byte")

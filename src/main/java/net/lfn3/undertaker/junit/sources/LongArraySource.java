@@ -13,9 +13,9 @@ public interface LongArraySource {
     {
         return getLongArray(generator, 0, 64);
     }
-    default long[] getLongArray(ToLongFunction<Source> generator, int minSize)
+    default long[] getLongArray(ToLongFunction<Source> generator, int size)
     {
-        return getLongArray(generator, minSize, minSize + 64);
+        return getLongArray(generator, size, size);
     }
     long[] getLongArray(ToLongFunction<Source> generator, int minSize, int maxSize);
 }

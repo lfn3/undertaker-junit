@@ -12,9 +12,9 @@ public interface ByteArraySource {
     {
         return getByteArray(generator, 0, 64);
     }
-    default byte[] getByteArray(ToByteFunction<Source> generator, int minSize)
+    default byte[] getByteArray(ToByteFunction<Source> generator, int size)
     {
-        return getByteArray(generator, minSize, minSize + 64);
+        return getByteArray(generator, size, size);
     }
     byte[] getByteArray(ToByteFunction<Source> generator, int minSize, int maxSize);
 }

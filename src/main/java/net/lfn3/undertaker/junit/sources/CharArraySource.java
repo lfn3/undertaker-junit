@@ -12,9 +12,9 @@ public interface CharArraySource {
     {
         return getCharArray(generator, 0, 64);
     }
-    default char[] getCharArray(ToCharFunction<Source> generator, int minSize)
+    default char[] getCharArray(ToCharFunction<Source> generator, int size)
     {
-        return getCharArray(generator, minSize, minSize + 64);
+        return getCharArray(generator, size, size);
     }
     char[] getCharArray(ToCharFunction<Source> generator, int minSize, int maxSize);
 }

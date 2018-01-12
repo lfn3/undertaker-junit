@@ -12,9 +12,9 @@ public interface FloatArraySource {
     {
         return getFloatArray(generator, 0, 64);
     }
-    default float[] getFloatArray(ToFloatFunction<Source> generator, int minSize)
+    default float[] getFloatArray(ToFloatFunction<Source> generator, int size)
     {
-        return getFloatArray(generator, minSize, minSize + 64);
+        return getFloatArray(generator, size, size);
     }
     float[] getFloatArray(ToFloatFunction<Source> generator, int minSize, int maxSize);
 }

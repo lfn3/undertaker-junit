@@ -13,9 +13,9 @@ public interface IntArraySource {
     {
         return getIntArray(generator, 0, 64);
     }
-    default int[] getIntArray(ToIntFunction<Source> generator, int minSize)
+    default int[] getIntArray(ToIntFunction<Source> generator, int size)
     {
-        return getIntArray(generator, minSize, minSize + 64);
+        return getIntArray(generator, size, size);
     }
     int[] getIntArray(ToIntFunction<Source> generator, int minSize, int maxSize);
 }

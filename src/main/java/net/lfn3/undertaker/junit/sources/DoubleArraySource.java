@@ -13,9 +13,9 @@ public interface DoubleArraySource {
     {
         return getDoubleArray(generator, 0, 64);
     }
-    default double[] getDoubleArray(ToDoubleFunction<Source> generator, int minSize)
+    default double[] getDoubleArray(ToDoubleFunction<Source> generator, int size)
     {
-        return getDoubleArray(generator, minSize, minSize + 64);
+        return getDoubleArray(generator, size, size);
     }
     double[] getDoubleArray(ToDoubleFunction<Source> generator, int minSize, int maxSize);
 }

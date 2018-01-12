@@ -1,6 +1,7 @@
 package net.lfn3.undertaker.junit;
 
 import net.lfn3.undertaker.junit.generators.CodePoints;
+import net.lfn3.undertaker.junit.primitive.functions.ToByteFunction;
 import net.lfn3.undertaker.junit.sources.ByteSource;
 import net.lfn3.undertaker.junit.sources.IntSource;
 import net.lfn3.undertaker.junit.sources.StringSource;
@@ -19,8 +20,7 @@ public class SourceRuleTest {
     private List<Long> aList = new ArrayList<>();
     private static final Map<Class, Generator> GENERATORS = new HashMap<>();
 
-    static
-    {
+    static {
         GENERATORS.put(GeneratorMapTestClass.class, s -> new GeneratorMapTestClass("Hello!"));
     }
 
@@ -28,103 +28,104 @@ public class SourceRuleTest {
     public Source source = new SourceRule(GENERATORS);
 
     @Before
-    public void before()
-    {
+    public void before() {
         clearedBefore = 0;
     }
 
     @Test
-    public void beforeRunsWithEveryIteration()
-    {
+    public void beforeRunsWithEveryIteration() {
         Assert.assertEquals(0, clearedBefore);
         clearedBefore = source.getInt();
     }
 
     @Test
-    public void runsOnANewlyInstansiatedClass()
-    {
+    public void runsOnANewlyInstansiatedClass() {
         Assert.assertEquals(0, aList.size());
         aList.add(source.getLong());
     }
 
     @Test
-    public void compilesAndRuns()
-    {
+    public void compilesAndRuns() {
         Assert.assertTrue(true);
     }
 
     @Test
-    public void canGetAnInt()
-    {
+    public void canGetAnInt() {
         int anInt = source.getInt();
         Assert.assertTrue(anInt >= Integer.MIN_VALUE);
         Assert.assertTrue(anInt <= Integer.MAX_VALUE);
     }
 
     @Test
-    public void canGetIntInRange()
-    {
+    public void canGetIntInRange() {
         int anInt = source.getInt(1, 10);
 
         Assert.assertTrue(anInt >= 1);
-        Assert.assertTrue(anInt<= 10);
+        Assert.assertTrue(anInt <= 10);
     }
 
     @Test
-    public void canGetAnBetweenMaxAndMin()
-    {
+    public void canGetAnBetweenMaxAndMin() {
         int anInt = source.getInt(0, 1);
         Assert.assertTrue(anInt == 0 || anInt == 1);
     }
 
     @Test(expected = AssertionError.class)
-    public void canFail()
-    {
+    public void canFail() {
         Assert.assertTrue(false);
     }
 
     @Test(expected = AssertionError.class)
-    public void canFailWithNiceishMessageWhenUsingAGenerator()
-    {
+    public void canFailWithNiceishMessageWhenUsingAGenerator() {
         Assert.assertNull(source.getBool());
     }
 
     @Test
-    public void canGetABoolean()
-    {
+    public void canGetABoolean() {
         final boolean bool = source.getBool();
         Assert.assertTrue(bool || !bool);
     }
 
     @Test
-    public void canGetAByte()
-    {
+    public void canGetAByte() {
         final byte aByte = source.getByte();
         Assert.assertTrue(aByte >= Byte.MIN_VALUE);
         Assert.assertTrue(aByte <= Byte.MAX_VALUE);
     }
 
     @Test
-    public void canGetAList() throws Exception
-    {
+    public void canGetAList() {
         final List<Date> list = source.getList(SourceRuleTest::generateDate);
         Assert.assertTrue(list != null);
-        final List<Byte> aListAOfBytes = source.getList(ByteSource::getByte);
+
+        final List<GeneratorMapTestClass> fixedSize = source.getList(s -> s.generate(GeneratorMapTestClass.class), 5);
+        Assert.assertTrue(fixedSize.size() == 5);
+
+        final List<Byte> aListAOfBytes = source.getList(ByteSource::getByte, 1, 10);
         Assert.assertTrue(aListAOfBytes != null);
+        Assert.assertTrue(1 <= aListAOfBytes.size());
+        Assert.assertTrue(aListAOfBytes.size() <= 10);
     }
 
     @Test
-    public void canGetAnArray() throws Exception
-    {
+    public void canGetAnArray() {
         final Date[] anArray = source.getArray(Date.class, SourceRuleTest::generateDate);
         Assert.assertTrue(anArray != null);
-        final byte[] aByteArray = source.getByteArray();
+
+
+        final GeneratorMapTestClass[] fixedSize = source.getArray(
+                GeneratorMapTestClass.class, s -> s.generate(GeneratorMapTestClass.class), 5);
+        Assert.assertTrue(fixedSize.length == 5);
+
+        ToByteFunction<Source> getByte = Source::getByte;
+        final byte[] aByteArray = source.getByteArray(getByte, 1, 10);
         Assert.assertTrue(aByteArray != null);
+        Assert.assertTrue(1 <= aByteArray.length);
+        Assert.assertTrue(aByteArray.length <= 10);
     }
 
     @Test
-    public void canGenerateWithFunction() throws Exception
-    {
+    public void canGenerateWithFunction() {
         final Date generated = source.generate(SourceRuleTest::generateDate);
         Assert.assertNotNull(generated);
 
@@ -136,16 +137,14 @@ public class SourceRuleTest {
     }
 
     @Test
-    public void canGetAShort() throws Exception
-    {
+    public void canGetAShort() {
         final short aShort = source.getShort();
         Assert.assertTrue(aShort >= Short.MIN_VALUE);
         Assert.assertTrue(aShort <= Short.MAX_VALUE);
     }
 
     @Test
-    public void canGetAFloat() throws Exception
-    {
+    public void canGetAFloat() {
         final float aFloat = source.getFloat();
         if (Double.isFinite(aFloat) && !Double.isNaN(aFloat)) {
             Assert.assertTrue(aFloat >= -Float.MAX_VALUE);
@@ -154,8 +153,7 @@ public class SourceRuleTest {
     }
 
     @Test
-    public void canGetADouble() throws Exception
-    {
+    public void canGetADouble() {
         final double aDouble = source.getDouble();
         if (Double.isFinite(aDouble) && !Double.isNaN(aDouble)) {
             Assert.assertTrue(aDouble >= -Double.MAX_VALUE);
@@ -164,8 +162,7 @@ public class SourceRuleTest {
     }
 
     @Test
-    public void canGetRealDouble() throws Exception
-    {
+    public void canGetRealDouble() {
         final double realDouble = source.getRealDouble();
 
         Assert.assertFalse(Double.isInfinite(realDouble));
@@ -176,16 +173,14 @@ public class SourceRuleTest {
     }
 
     @Test
-    public void canGetALong() throws Exception
-    {
+    public void canGetALong() {
         final long aLong = source.getLong();
         Assert.assertTrue(aLong >= Long.MIN_VALUE);
         Assert.assertTrue(aLong <= Long.MAX_VALUE);
     }
 
     @Test
-    public void canGetLongArray() throws Exception
-    {
+    public void canGetLongArray() {
         final long[] someLongs = source.getLongArray();
         for (long aLong : someLongs) {
             Assert.assertTrue(aLong >= Long.MIN_VALUE);
@@ -194,8 +189,7 @@ public class SourceRuleTest {
     }
 
     @Test
-    public void canGetEveryKindOfChar() throws Exception
-    {
+    public void canGetEveryKindOfChar() {
         final char c = source.getChar();
         final char ascii = source.getAsciiChar();
 
@@ -207,10 +201,11 @@ public class SourceRuleTest {
     }
 
     @Test
-    public void canGetEveryKindOfString() throws Exception
-    {
+    public void canGetEveryKindOfString() {
         final String s = source.getString();
+        Assert.assertTrue(s != null);
         final String ascii = source.getString(CodePoints.ASCII);
+        Assert.assertTrue(ascii != null);
 
         final String alpha = source.getString(CodePoints.ALPHA);
         for (char c : alpha.toCharArray()) {
@@ -221,29 +216,29 @@ public class SourceRuleTest {
         for (char c : alpha.toCharArray()) {
             Assert.assertTrue(Character.isAlphabetic(c) || Character.isDigit(c));
         }
+
+        final String fixedSize = source.getString(CodePoints.ASCII, 5);
+        Assert.assertTrue(fixedSize.length() == 5);
     }
 
-    private enum AnEnum { A, B, C }
+    private enum AnEnum {A, B, C}
 
     @Test
-    public void canGetAnEnum() throws Exception
-    {
+    public void canGetAnEnum() {
         AnEnum anEnum = source.getEnum(AnEnum.class);
 
         Assert.assertTrue(anEnum == AnEnum.A || anEnum == AnEnum.B || anEnum == AnEnum.C);
     }
 
     @Test
-    public void canReflectivelyGetAnEnum() throws Exception
-    {
+    public void canReflectivelyGetAnEnum() {
         AnEnum anEnum = source.reflectively(AnEnum.class);
 
         Assert.assertTrue(anEnum == AnEnum.A || anEnum == AnEnum.B || anEnum == AnEnum.C);
     }
 
     @Test
-    public void canGetFromCollection() throws Exception
-    {
+    public void canGetFromCollection() {
         AnEnum anEnum = source.from(AnEnum.values());
         Assert.assertTrue(anEnum == AnEnum.A || anEnum == AnEnum.B || anEnum == AnEnum.C);
 
@@ -253,28 +248,34 @@ public class SourceRuleTest {
     }
 
     @Test
-    public void canGetAMap() throws Exception
-    {
-       final Map<String, String> m = source.getMap(
-               s -> s.getString(CodePoints.ALPHANUMERIC),
-               s -> s.getString(CodePoints.ALPHA));
+    public void canGetAMap() {
+        final Map<String, String> m = source.getMap(
+                s -> s.getString(CodePoints.ALPHANUMERIC),
+                s -> s.getString(CodePoints.ALPHA));
 
-       m.keySet().forEach(s -> {
-           for (char c : s.toCharArray()) {
-               Assert.assertTrue(Character.isAlphabetic(c) || Character.isDigit(c));
-           }
-       });
+        m.keySet().forEach(s -> {
+            for (char c : s.toCharArray()) {
+                Assert.assertTrue(Character.isAlphabetic(c) || Character.isDigit(c));
+            }
+        });
 
         m.values().forEach(s -> {
             for (char c : s.toCharArray()) {
                 Assert.assertTrue(Character.isAlphabetic(c));
             }
         });
+
+        final Map<Integer, Character> fixedSize = source.getMap(Source::getInt, Source::getChar, 5);
+        Assert.assertTrue(fixedSize.size() == 5);
+
+
+        final Map<Integer, Character> sized = source.getMap(Source::getInt, Source::getChar, 5, 10);
+        Assert.assertTrue(5 <= sized.size());
+        Assert.assertTrue(sized.size() <= 10);
     }
 
     @Test
-    public void canGetAMapWhereTheValueGenTakesKeyAsAnArg() throws Exception
-    {
+    public void canGetAMapWhereTheValueGenTakesKeyAsAnArg() {
         final Map<String, String> m = source.getMap(
                 s -> s.getString(CodePoints.ALPHANUMERIC),
                 (s, k) -> k + s.getString(CodePoints.ALPHA));
@@ -292,8 +293,7 @@ public class SourceRuleTest {
     }
 
     @Test
-    public void canUseGeneratorsFromSource() throws Exception
-    {
+    public void canUseGeneratorsFromSource() {
         GeneratorMapTestClass generated = source.generate(GeneratorMapTestClass.class);
         Assert.assertNotNull(generated);
     }
@@ -301,24 +301,21 @@ public class SourceRuleTest {
     @Test
     @Seed(1234567)
     @Trials(1)
-    public void annotationsWork() throws Exception
-    {
+    public void annotationsWork() {
         Assert.assertEquals(-9223372036854775808L, source.getLong());
     }
 
     @Test
-    public void reflectiveOverPrimitives() throws Exception
-    {
+    public void reflectiveOverPrimitives() {
         final Long aLong = source.reflectively(Long.class);
         final Long anotherLong = source.reflectively(long.class);
-        
+
         final Boolean aBool = source.reflectively(Boolean.class);
         final boolean anotherBool = source.reflectively(boolean.class);
     }
 
     @Test
-    public void reflectiveApi() throws Exception
-    {
+    public void reflectiveApi() throws Exception {
         final Date aDate = source.reflectively(Date.class.getConstructor(long.class));
         Assert.assertNotNull(aDate);
 
@@ -328,7 +325,7 @@ public class SourceRuleTest {
     }
 
     @Test
-    public void canGetSet() throws Exception {
+    public void canGetSet() {
         final Set<Integer> set = source.getSet(IntSource::getInt);
         Assert.assertNotNull(set);
 
@@ -336,16 +333,22 @@ public class SourceRuleTest {
             Assert.assertTrue(anInt >= Integer.MIN_VALUE);
             Assert.assertTrue(anInt <= Integer.MAX_VALUE);
         });
+
+        final Set<String> fixedSize = source.getSet(Source::getString, 5);
+        Assert.assertTrue(fixedSize.size() == 5);
+
+        final Set<String> sized = source.getSet(Source::getString, 5, 10);
+        Assert.assertTrue(5 <= sized.size());
+        Assert.assertTrue(sized.size() <= 10);
     }
 
     @Test
-    public void canGetNullable() throws Exception {
+    public void canGetNullable() {
         final String nullableString = source.getNullable(StringSource::getString);
         Assert.assertTrue(nullableString == null || nullableString != null);
     }
 
-    public static Date generateDate(Source s)
-    {
+    public static Date generateDate(Source s) {
         s.pushInterval();
         final Date generatedValue = Date.from(Instant.ofEpochSecond(s.getInt()));
         s.popInterval(generatedValue);
@@ -356,23 +359,18 @@ public class SourceRuleTest {
     public static class GeneratorMapTestClass {
         public final String s;
 
-        public GeneratorMapTestClass(String s)
-        {
+        public GeneratorMapTestClass(String s) {
             this.s = s;
         }
     }
 
-    public static class ClassWithConstructor
-    {
-        public ClassWithConstructor(GeneratorMapTestClass c)
-        {
+    public static class ClassWithConstructor {
+        public ClassWithConstructor(GeneratorMapTestClass c) {
         }
     }
 
-    public static class ClassWithStaticConstructor
-    {
-        public static ClassWithStaticConstructor constructor(ClassWithConstructor c)
-        {
+    public static class ClassWithStaticConstructor {
+        public static ClassWithStaticConstructor constructor(ClassWithConstructor c) {
             return new ClassWithStaticConstructor();
         }
     }
