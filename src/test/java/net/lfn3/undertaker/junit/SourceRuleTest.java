@@ -304,7 +304,7 @@ public class SourceRuleTest {
     @Seed(1234567)
     @Trials(1)
     public void annotationsWork() {
-        Assert.assertEquals(-9223372036854775808L, source.getLong());
+        Assert.assertEquals(-1921583219793701470L, source.getLong());
     }
 
     @Test
