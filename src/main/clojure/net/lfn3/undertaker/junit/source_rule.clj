@@ -162,6 +162,11 @@
   ([this max] (-getRealDouble this (- Double/MAX_VALUE) max))
   ([_ min max] (undertaker/real-double min max)))
 
+(defn ^BigDecimal -getBigDecimal
+  ([this] (BigDecimal/valueOf (undertaker/double)))
+  ([this ^BigDecimal max] (BigDecimal/valueOf (undertaker/double (.doubleValue max))))
+  ([this ^BigDecimal min ^BigDecimal max] (BigDecimal/valueOf (undertaker/double (.doubleValue min) (.doubleValue max)))))
+
 (defn ^List -getList
   ([this ^Function generator] (-getList this generator 0 64))
   ([this ^Function generator size] (-getList this generator size size))

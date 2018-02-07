@@ -5,12 +5,14 @@ import net.lfn3.undertaker.junit.primitive.functions.ToByteFunction;
 import net.lfn3.undertaker.junit.sources.ByteSource;
 import net.lfn3.undertaker.junit.sources.IntSource;
 import net.lfn3.undertaker.junit.sources.StringSource;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class SourceRuleTest {
     private static final Generator<Date> DATE_GENERATOR = s -> Date.from(Instant.ofEpochSecond(s.getInt(0, Integer.MAX_VALUE)));
@@ -308,9 +310,10 @@ public class SourceRuleTest {
     @Test
     public void reflectiveOverPrimitives() {
         final Long aLong = source.reflectively(Long.class);
-        final Long anotherLong = source.reflectively(long.class);
-
+        Assert.assertNotNull(aLong);
+        final long anotherLong = source.reflectively(long.class);
         final Boolean aBool = source.reflectively(Boolean.class);
+        Assert.assertNotNull(aBool);
         final boolean anotherBool = source.reflectively(boolean.class);
     }
 
@@ -346,6 +349,16 @@ public class SourceRuleTest {
     public void canGetNullable() {
         final String nullableString = source.getNullable(StringSource::getString);
         Assert.assertTrue(nullableString == null || nullableString != null);
+    }
+
+    @Test
+    public void canGetBigDecimal() throws Exception {
+        final BigDecimal min = BigDecimal.valueOf(456);
+        final BigDecimal max = BigDecimal.valueOf(789);
+        final BigDecimal bd = source.getBigDecimal(min, max);
+
+        Assert.assertTrue(0 <= bd.compareTo(min));
+        Assert.assertTrue(bd.compareTo(max) <= 0);
     }
 
     public static Date generateDate(Source s) {
