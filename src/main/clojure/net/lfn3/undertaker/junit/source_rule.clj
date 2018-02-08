@@ -13,7 +13,8 @@
            (java.lang.reflect Modifier)
            (net.lfn3.undertaker.junit Seed Trials)
            (net.lfn3.undertaker.junit Generator)
-           (net.lfn3.undertaker.junit.generators IntGenerator CodePoints))
+           (net.lfn3.undertaker.junit.generators IntGenerator CodePoints)
+           (net.lfn3.undertaker.junit.primitive.functions ToBooleanFunction ToByteFunction ToCharFunction ToFloatFunction ToShortFunction))
   (:require [net.lfn3.undertaker.core :as undertaker]
             [net.lfn3.undertaker.source :as source]
             [clojure.string :as str]))
@@ -244,31 +245,32 @@
                 (into-array Object)
                 (.newInstance constructor))))))))
 
-(defmacro get-array-fn [type-hint type-str & [array-fn-name]]
-  (let [fn-name (symbol (str "-get" (str/upper-case (first type-str))
-                             (apply str (rest type-str))
-                             "Array"))
-        array-fn-name (if array-fn-name
-                        (symbol array-fn-name)
-                        (symbol (str type-str "-array")))
-        generator-name (symbol "undertaker" type-str)]
+(defmacro get-array-fn [type-hint type-str specialize-from]
+  (let [camelcased-type-str (str (str/upper-case (first type-str)) (apply str (rest type-str)))
+        fn-name (symbol (str "-get" camelcased-type-str "Array"))
+        array-fn-name (symbol (str type-str "-array"))
+        generator-name (symbol "undertaker" type-str)
+        apply-fn (symbol (str "applyAs" camelcased-type-str))
+        function-type-hint (if (= specialize-from :java)
+                             (symbol (str "java.util.function.To" camelcased-type-str "Function"))
+                             (symbol (str "net.lfn3.undertaker.junit.primitive.functions.To" camelcased-type-str "Function")))]
     `(defn ^{:tag type-hint} ~fn-name
        ([_#] (~array-fn-name (undertaker/vec-of ~generator-name)))
-       ([this# ^Function generator#]
-         (~array-fn-name (undertaker/vec-of #(.apply generator# this#))))
-       ([this# ^Function generator# size#]
-         (~array-fn-name (undertaker/vec-of #(.apply generator# this#) size# size#)))
-       ([this# ^Function generator# min# max#]
-         (~array-fn-name (undertaker/vec-of #(.apply generator# this#) min# max#))))))
+       ([this# ^{:tag ~function-type-hint} generator#]
+         (~array-fn-name (undertaker/vec-of #(. generator# ~apply-fn this#))))
+       ([this# ^{:tag ~function-type-hint} generator# size#]
+         (~array-fn-name (undertaker/vec-of #(. generator# ~apply-fn this#)) size# size#))
+       ([this# ^{:tag ~function-type-hint} generator# min# max#]
+         (~array-fn-name (undertaker/vec-of #(. generator# ~apply-fn this#)) min# max#)))))
 
-(get-array-fn "[J" "long")
-(get-array-fn "[B" "byte")
-(get-array-fn "[C" "char")
-(get-array-fn "[D" "double")
-(get-array-fn "[F" "float")
-(get-array-fn "[I" "int")
-(get-array-fn "[S" "short")
-(get-array-fn "[Z" "boolean" "boolean-array")
+(get-array-fn "[J" "long" :java)
+(get-array-fn "[B" "byte" :undertaker)
+(get-array-fn "[C" "char" :undertaker)
+(get-array-fn "[D" "double" :java)
+(get-array-fn "[F" "float" :undertaker)
+(get-array-fn "[I" "int" :java)
+(get-array-fn "[S" "short" :undertaker)
+(get-array-fn "[Z" "boolean" :undertaker)
 
 (defn generate-array-reflectively [this array-class-string]
   (let [class (Class/forName array-class-string)]

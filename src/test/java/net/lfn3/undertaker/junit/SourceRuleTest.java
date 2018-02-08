@@ -3,6 +3,7 @@ package net.lfn3.undertaker.junit;
 import net.lfn3.undertaker.junit.generators.CodePoints;
 import net.lfn3.undertaker.junit.primitive.functions.ToByteFunction;
 import net.lfn3.undertaker.junit.sources.ByteSource;
+import net.lfn3.undertaker.junit.sources.IntArraySource;
 import net.lfn3.undertaker.junit.sources.IntSource;
 import net.lfn3.undertaker.junit.sources.StringSource;
 import org.junit.Assert;
@@ -98,13 +99,13 @@ public class SourceRuleTest {
     @Test
     public void canGetAList() {
         final List<Date> list = source.getList(SourceRuleTest::generateDate);
-        Assert.assertTrue(list != null);
+        Assert.assertNotNull(list);
 
         final List<GeneratorMapTestClass> fixedSize = source.getList(s -> s.generate(GeneratorMapTestClass.class), 5);
         Assert.assertTrue(fixedSize.size() == 5);
 
         final List<Byte> aListAOfBytes = source.getList(ByteSource::getByte, 1, 10);
-        Assert.assertTrue(aListAOfBytes != null);
+        Assert.assertNotNull(aListAOfBytes);
         Assert.assertTrue(1 <= aListAOfBytes.size());
         Assert.assertTrue(aListAOfBytes.size() <= 10);
     }
@@ -112,7 +113,8 @@ public class SourceRuleTest {
     @Test
     public void canGetAnArray() {
         final Date[] anArray = source.getArray(Date.class, SourceRuleTest::generateDate);
-        Assert.assertTrue(anArray != null);
+        Assert.assertNotNull(anArray);
+
 
 
         final GeneratorMapTestClass[] fixedSize = source.getArray(
@@ -121,7 +123,13 @@ public class SourceRuleTest {
 
         ToByteFunction<Source> getByte = Source::getByte;
         final byte[] aByteArray = source.getByteArray(getByte, 1, 10);
-        Assert.assertTrue(aByteArray != null);
+        Assert.assertNotNull(aByteArray);
+
+        final byte[] byteArrayWithGenerator = source.getByteArray(Source::getByte);
+        Assert.assertNotNull(byteArrayWithGenerator);
+
+        final int[] anIntArray = source.getIntArray(Source::getInt);
+        Assert.assertNotNull(anIntArray);
         Assert.assertTrue(1 <= aByteArray.length);
         Assert.assertTrue(aByteArray.length <= 10);
     }
@@ -359,6 +367,15 @@ public class SourceRuleTest {
 
         Assert.assertTrue(0 <= bd.compareTo(min));
         Assert.assertTrue(bd.compareTo(max) <= 0);
+    }
+
+    @Test
+    public void canGet2DArray() throws Exception {
+        final int[][] array = source.getArray(int[].class, IntArraySource::getIntArray);
+        Assert.assertNotNull(array);
+
+        final int[][] anotherArray = source.getArray(int[].class, s -> s.getIntArray(Source::getInt));
+        Assert.assertNotNull(anotherArray);
     }
 
     public static Date generateDate(Source s) {
