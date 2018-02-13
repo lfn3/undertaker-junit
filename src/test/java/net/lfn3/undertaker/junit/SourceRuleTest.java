@@ -370,6 +370,26 @@ public class SourceRuleTest {
     }
 
     @Test
+    public void canGetBigDecimalWithLotsOfNumbersAfterTheDecimal() throws Exception {
+        final BigDecimal min = BigDecimal.valueOf(456.78912546);
+        final BigDecimal max = BigDecimal.valueOf(789.48489991);
+        final BigDecimal bd = source.getBigDecimal(min, max);
+
+        Assert.assertTrue(0 <= bd.compareTo(min));
+        Assert.assertTrue(bd.compareTo(max) <= 0);
+    }
+
+    @Test
+    public void canGetNegativeBigDecimal() throws Exception {
+        final BigDecimal min = BigDecimal.valueOf(-1000);
+        final BigDecimal max = BigDecimal.valueOf(-200);
+        final BigDecimal bd = source.getBigDecimal(min, max);
+
+        Assert.assertTrue(0 <= bd.compareTo(min));
+        Assert.assertTrue(bd.compareTo(max) <= 0);
+    }
+
+    @Test
     public void canGet2DArray() throws Exception {
         final int[][] array = source.getArray(int[].class, IntArraySource::getIntArray);
         Assert.assertNotNull(array);
