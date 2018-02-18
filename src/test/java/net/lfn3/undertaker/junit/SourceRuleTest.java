@@ -7,6 +7,8 @@ import net.lfn3.undertaker.junit.sources.IntSource;
 import net.lfn3.undertaker.junit.sources.StringSource;
 import org.junit.*;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
@@ -290,6 +292,28 @@ public class SourceRuleTest {
                 Assert.assertTrue(Character.isAlphabetic(c));
             }
         });
+    }
+
+    @Test
+    public void testBigInteger()
+    {
+        BigInteger max = new BigInteger("-2");
+        BigInteger min = new BigInteger("-1200");
+        BigInteger bd = source.getBigInteger(min, max);
+
+        Assert.assertTrue(0 <= max.compareTo(bd));
+        Assert.assertTrue(min.compareTo(bd) <= 0);
+    }
+
+    @Test
+    public void testBigDecimal()
+    {
+        BigDecimal max = new BigDecimal("-200.00001");
+        BigDecimal min = new BigDecimal("-1200.01");
+        BigDecimal bd = source.getBigDecimal(min, max);
+
+        Assert.assertTrue(0 <= max.compareTo(bd));
+        Assert.assertTrue(min.compareTo(bd) <= 0);
     }
 
     @Test

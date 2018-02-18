@@ -3,6 +3,8 @@ package net.lfn3.undertaker.junit;
 import net.lfn3.undertaker.junit.sources.*;
 import org.junit.rules.TestRule;
 
+import java.math.BigInteger;
+
 public interface Source extends BoolSource,
                                 BoolArraySource,
                                 ByteSource,
@@ -19,6 +21,8 @@ public interface Source extends BoolSource,
                                 FloatArraySource,
                                 DoubleSource,
                                 DoubleArraySource,
+                                BigDecimalSource,
+                                BigIntegerSource,
                                 StringSource,
                                 ListSource,
                                 ArraySource,

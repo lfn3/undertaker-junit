@@ -4,7 +4,7 @@
     :state state
     :implements [net.lfn3.undertaker.junit.Source]
     :init init
-    :constructors {[] []
+    :constructors {[]              []
                    [java.util.Map] []})
   (:import (org.junit.runners.model Statement)
            (org.junit.runner Description JUnitCore Computer Request)
@@ -161,6 +161,42 @@
   ([this] (-getRealDouble this (- Double/MAX_VALUE) Double/MAX_VALUE))
   ([this max] (-getRealDouble this (- Double/MAX_VALUE) max))
   ([_ min max] (undertaker/real-double min max)))
+
+(defn pad-array-to-size [arr size]
+  (if (= (count arr) size)
+    arr
+    (let [out (byte-array size)
+          offset (- size (count arr))]
+      (System/arraycopy arr 0 out offset (count arr))
+      out)))
+
+(defn ^BigInteger -getBigInteger
+  ([this] (undertaker/with-interval (BigInteger. (undertaker/long))))
+  ([this ^BigInteger max-val] (-getBigInteger this (.subtract max-val (BigInteger. Long/MAX_VALUE)) max-val))
+  ([this ^BigInteger min-val ^BigInteger max-val]
+    (undertaker/with-interval
+      (let [min-unscaled-arr (.toByteArray min-val)
+            max-unscaled-arr (.toByteArray max-val)
+            max-size (max (count min-unscaled-arr) (count max-unscaled-arr))
+            min-unscaled-arr (pad-array-to-size min-unscaled-arr max-size)
+            max-unscaled-arr (pad-array-to-size max-unscaled-arr max-size)
+            output-arr (byte-array max-size)]
+        (.get (source/get-bytes undertaker/*source* [[min-unscaled-arr max-unscaled-arr]]) output-arr)
+        (BigInteger. output-arr)))))
+
+(defn ^BigDecimal -getBigDecimal
+  ([this] (undertaker/with-interval (BigDecimal. (undertaker/double))))
+  ([this ^BigDecimal max-val] (-getBigDecimal this (.subtract max-val (BigDecimal. (- Double/MAX_VALUE))) max-val))
+  ([this ^BigDecimal min-val ^BigDecimal max-val]
+   (undertaker/with-interval
+     (let [unscaled-val (-getBigInteger (.unscaledValue min-val) (.unscaledValue max-val))
+           min-scale (min (.scale min-val) (.scale max-val))
+           max-scale (max (.scale min-val) (.scale max-val))
+           allowed-scales (->> (range min-scale max-scale)
+                               (drop-while #(< (BigDecimal. unscaled-val %1) min-val))
+                               (take-while #(<= max-val (BigDecimal. unscaled-val %1))))
+           ^int scale (undertaker/int (first allowed-scales) (last allowed-scales))]
+       (BigDecimal. unscaled-val scale)))))
 
 (defn ^List -getList
   ([this ^Function generator] (-getList this generator 0 64))
