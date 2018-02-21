@@ -182,8 +182,11 @@
             max-size (max (count min-unscaled-arr) (count max-unscaled-arr))
             min-unscaled-arr (pad-array-to-size min-unscaled-arr max-size)
             max-unscaled-arr (pad-array-to-size max-unscaled-arr max-size)
-            output-arr (byte-array max-size)]
-        (.get (source/get-bytes undertaker/*source* [[min-unscaled-arr max-unscaled-arr]]) output-arr)
+            output-arr (byte-array max-size)
+            buf (source/get-bytes undertaker/*source* [[min-unscaled-arr max-unscaled-arr]])
+            posn (.position buf)]
+        (.get buf output-arr)
+        (.position buf posn)
         (BigInteger. output-arr)))))
 
 (defn ^BigDecimal -getBigDecimal
