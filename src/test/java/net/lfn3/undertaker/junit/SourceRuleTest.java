@@ -115,8 +115,6 @@ public class SourceRuleTest {
         final Date[] anArray = source.getArray(Date.class, SourceRuleTest::generateDate);
         Assert.assertNotNull(anArray);
 
-
-
         final GeneratorMapTestClass[] fixedSize = source.getArray(
                 GeneratorMapTestClass.class, s -> s.generate(GeneratorMapTestClass.class), 5);
         Assert.assertTrue(fixedSize.length == 5);
@@ -357,36 +355,6 @@ public class SourceRuleTest {
     public void canGetNullable() {
         final String nullableString = source.getNullable(StringSource::getString);
         Assert.assertTrue(nullableString == null || nullableString != null);
-    }
-
-    @Test
-    public void canGetBigDecimal() throws Exception {
-        final BigDecimal min = BigDecimal.valueOf(456);
-        final BigDecimal max = BigDecimal.valueOf(789);
-        final BigDecimal bd = source.getBigDecimal(min, max);
-
-        Assert.assertTrue(0 <= bd.compareTo(min));
-        Assert.assertTrue(bd.compareTo(max) <= 0);
-    }
-
-    @Test
-    public void canGetBigDecimalWithLotsOfNumbersAfterTheDecimal() throws Exception {
-        final BigDecimal min = BigDecimal.valueOf(456.78912546);
-        final BigDecimal max = BigDecimal.valueOf(789.48489991);
-        final BigDecimal bd = source.getBigDecimal(min, max);
-
-        Assert.assertTrue(0 <= bd.compareTo(min));
-        Assert.assertTrue(bd.compareTo(max) <= 0);
-    }
-
-    @Test
-    public void canGetNegativeBigDecimal() throws Exception {
-        final BigDecimal min = BigDecimal.valueOf(-1000);
-        final BigDecimal max = BigDecimal.valueOf(-200);
-        final BigDecimal bd = source.getBigDecimal(min, max);
-
-        Assert.assertTrue(0 <= bd.compareTo(min));
-        Assert.assertTrue(bd.compareTo(max) <= 0);
     }
 
     @Test
