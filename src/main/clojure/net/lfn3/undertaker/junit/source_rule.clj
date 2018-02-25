@@ -13,7 +13,7 @@
            (java.lang.reflect Modifier)
            (net.lfn3.undertaker.junit Seed Trials)
            (net.lfn3.undertaker.junit Generator)
-           (net.lfn3.undertaker.junit.generators IntGenerator CodePoints)
+           (net.lfn3.undertaker.junit.generators IntGenerator CodePoints ShortGenerator)
            (net.lfn3.undertaker.junit.primitive.functions ToBooleanFunction ToByteFunction ToCharFunction ToFloatFunction ToShortFunction))
   (:require [net.lfn3.undertaker.core :as undertaker]
             [net.lfn3.undertaker.source :as source]
@@ -140,12 +140,12 @@
 
 (defn ^String -getString
   ([this] (-getString this CodePoints/ANY 0 undertaker/default-string-max-size))
-  ([this ^IntGenerator intGen] (-getString this intGen 0 undertaker/default-string-max-size))
-  ([this ^IntGenerator intGen size] (-getString this intGen size size))
-  ([this ^IntGenerator intGen min max]
+  ([this ^ShortGenerator intGen] (-getString this intGen 0 undertaker/default-string-max-size))
+  ([this ^ShortGenerator intGen size] (-getString this intGen size size))
+  ([this ^ShortGenerator intGen min max]
    (undertaker/with-interval
-     (->> (undertaker/vec-of #(.applyAsInt intGen this) min max)
-          (map char)
+     (->> (undertaker/vec-of #(.applyAsShort intGen this) min max)
+          (map unchecked-char)
           (char-array)
           (String.)))))
 

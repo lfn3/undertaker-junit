@@ -1,10 +1,10 @@
 package net.lfn3.undertaker.junit.sources;
 
-import net.lfn3.undertaker.junit.generators.IntGenerator;
+import net.lfn3.undertaker.junit.generators.ShortGenerator;
 
 public interface StringSource {
     String getString();
-    String getString(IntGenerator codePointGenerator);
-    String getString(IntGenerator codePointGenerator, int size);
-    String getString(IntGenerator codePointGenerator, int minLength, int maxLength);
+    String getString(ShortGenerator codePointGenerator);
+    String getString(ShortGenerator codePointGenerator, int size);
+    String getString(ShortGenerator codePointGenerator, int minLength, int maxLength);
 }
