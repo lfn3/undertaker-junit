@@ -255,9 +255,9 @@
        ([this# ^{:tag ~function-type-hint} generator#]
          (~array-fn-name (undertaker/vec-of #(. generator# ~apply-fn this#))))
        ([this# ^{:tag ~function-type-hint} generator# size#]
-         (~array-fn-name (undertaker/vec-of #(. generator# ~apply-fn this#)) size# size#))
+         (~array-fn-name (undertaker/vec-of #(. generator# ~apply-fn this#) size# size#)))
        ([this# ^{:tag ~function-type-hint} generator# min# max#]
-         (~array-fn-name (undertaker/vec-of #(. generator# ~apply-fn this#)) min# max#)))))
+         (~array-fn-name (undertaker/vec-of #(. generator# ~apply-fn this#) min# max#))))))
 
 (get-array-fn "[J" "long" :java)
 (get-array-fn "[B" "byte" :undertaker)
