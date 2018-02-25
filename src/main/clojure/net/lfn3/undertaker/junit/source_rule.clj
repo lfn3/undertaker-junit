@@ -109,7 +109,8 @@
 (defn ^short -getShort
   ([this] (-getShort this Short/MIN_VALUE Short/MAX_VALUE))
   ([this max] (-getShort this Integer/MIN_VALUE max))
-  ([_ min max] (undertaker/short min max)))
+  ([_ min max] (undertaker/short min max))
+  ([_ min max & more-ranges] (apply undertaker/short min max more-ranges)))
 
 (defn ^int -getInt
   ([this] (-getInt this Integer/MIN_VALUE Integer/MAX_VALUE))
