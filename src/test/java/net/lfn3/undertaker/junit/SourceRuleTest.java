@@ -94,6 +94,10 @@ public class SourceRuleTest {
         final byte aByte = source.getByte();
         Assert.assertTrue(aByte >= Byte.MIN_VALUE);
         Assert.assertTrue(aByte <= Byte.MAX_VALUE);
+
+        final byte inRange = source.getByte(5, 12);
+        Assert.assertTrue(5 <= inRange);
+        Assert.assertTrue(inRange <= 12);
     }
 
     @Test
@@ -149,6 +153,10 @@ public class SourceRuleTest {
         final short aShort = source.getShort();
         Assert.assertTrue(aShort >= Short.MIN_VALUE);
         Assert.assertTrue(aShort <= Short.MAX_VALUE);
+
+        final short shortInRange = source.getShort(7, 11);
+        Assert.assertTrue(7 <= shortInRange);
+        Assert.assertTrue(shortInRange <= 11);
     }
 
     @Test

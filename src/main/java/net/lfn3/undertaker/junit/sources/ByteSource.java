@@ -12,4 +12,8 @@ public interface ByteSource {
     }
 
     byte getByte(byte min, byte max);
+
+    byte getByte(int max);
+
+    byte getByte(int min, int max);
 }
