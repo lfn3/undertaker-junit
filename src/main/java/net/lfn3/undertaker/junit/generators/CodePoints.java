@@ -7,4 +7,5 @@ public class CodePoints {
     public static final ShortGenerator ASCII = source -> source.getShort(32, 126);
     public static final ShortGenerator ALPHANUMERIC = source -> source.getShort(48, 57, 65, 90, 97,122);
     public static final ShortGenerator ALPHA = source -> source.getShort(65, 90, 97,122);
+    public static final ShortGenerator DIGITS = source -> source.getShort(48, 57);
 }

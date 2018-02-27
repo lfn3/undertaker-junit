@@ -290,6 +290,19 @@ public class SourceRuleTest {
     }
 
     @Test
+    public void canUseKeysToSelectGeneratorsForAMap() {
+        final Map<String, Generator<Character>> keysToGenerators = new HashMap<>();
+        keysToGenerators.put("ALPHA", s -> s.getChar(CodePoints.ALPHA));
+        keysToGenerators.put("DIGITS", s -> s.getChar(CodePoints.DIGITS));
+
+        Map<String, Character> map = source.getMap(s -> s.from(keysToGenerators.keySet()),
+                (s, k) -> "ALPHA".equals(k) ? s.getChar(CodePoints.ALPHA) : s.getChar(CodePoints.DIGITS));
+
+        Assert.assertTrue(map.get("ALPHA") == null || Character.isAlphabetic(map.get("ALPHA")));
+        Assert.assertTrue(map.get("DIGITS") == null || Character.isDigit(map.get("DIGITS")));
+    }
+
+    @Test
     public void canGetAMapWhereTheValueGenTakesKeyAsAnArg() {
         final Map<String, String> m = source.getMap(
                 s -> s.getString(CodePoints.ALPHANUMERIC),

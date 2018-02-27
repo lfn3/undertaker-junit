@@ -47,58 +47,76 @@ The messages produced by Undertaker are fairly verbose.
 
 ### Generators
 
-All of the generators in undertaker follow a similar pattern. Numeric generators have three arities:
+All of the generators in undertaker follow a similar pattern. Numeric generators have three arities.
+The no argument version produces all the values allowed by that type:
+
 ```java
 source.getInt();
 ```
-The no argument version produces all the values allowed by that type. 
+The single argument, max value case produces any value up to and including the value specified:
 
 ```java
 source.getInt(maxValue);
 ```
 
-The single argument, max value case produces any value up to and including the value specified. 
-This always includes negative values, so if you only want positive values you'll need the next arity. 
-
-```java
-source.getInt(minValue, maxValue);
-```
-
+This always includes negative values, so if you only want positive values you'll need the next arity.
 In the two argument case the method will produce values between min and max, which are again inclusive not exclusive.
 
 ```java
-source.getList(IntSource::getInt);
+source.getInt(minValue, maxValue);
 ```
 
 The collection generators all take a generator as their first argument. The primitive array generators are the only 
 exception to this rule: `source.getDoubleArray()` is fine.
 
 ```java
-source.getList(LongSource::getLong, size);
+source.getList(IntSource::getInt);
 ```
 
 The second argument is for producing a collection of fixed size. 
 
 ```java
-source.getList(StringSource::getString, minSize, maxSize)
+source.getList(LongSource::getLong, size);
 ```
 
 When you add a third argument, the second arg is treated as the minimum allowed size of the collection, and the third 
 argument as the maximum allowed size of the collection.
 
+```java
+source.getList(StringSource::getString, minSize, maxSize);
+```
+
 The map source is a slight exception to these rules, since you have to feed it two generator functions rather than one:
 
 ```java
-source.getMap(ShortSource::getShort, StringSource::getString)
+source.getMap(ShortSource::getShort, StringSource::getString);
 ```
 
 There is also an option to provide a `BiFunction<Source, K>` as the second generator, where `K` is the type of the key.
-This means you can make more heterogeneous collections.
+This means you can make more heterogeneous collections, by varying the value based on the key that is generated:
 
-<!--TODO: CharSource, StringSource -->
+```java
+final Map<String, Generator<Character>> keysToGenerators = new HashMap<>();
+keysToGenerators.put("ALPHA", s -> s.getChar(CodePoints.ALPHA));
+keysToGenerators.put("DIGITS", s -> s.getChar(CodePoints.DIGITS));
 
-There's a cheat sheet with more examples [here](docs/cheatsheet.md), or you can always spin up debugger and sample 
-input from the source to get an idea of how the various generators work.
+Map<String, Character> map = source.getMap(s -> s.from(keysToGenerators.keySet()),
+        (s, k) -> "ALPHA".equals(k) ? s.getChar(CodePoints.ALPHA) : s.getChar(CodePoints.DIGITS));
+```
+
+This also shows how `getChar` works - there's some default `CodePoint` generators in `net.lfn3.undertaker.junit.CodePoints`,
+however you can just supply your own short generator. The String generator operates the same way:
+
+```java
+final String alphanumeric = source.getString(CodePoints.ALPHANUMERIC);
+final String fourDigits = source.getString(CodePoints.DIGITS, 4);
+final String asciiMax24 = source.getString(CodePoints.ASCII, 0, 24);
+```
+
+There's also collection style overloads on strings, as shown.
+
+There's examples of all of the generators in this codebase [here](src/test/java/net/lfn3/undertaker/junit/SourceRuleTest.java)
+or you can always spin up debugger and sample input from the source to get an idea of how the various generators work.
 
 ## License
 
