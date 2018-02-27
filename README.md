@@ -45,7 +45,60 @@ public void testIntsAreEven() { ... }
 
 The messages produced by Undertaker are fairly verbose.
 
-There's a lot more apis which you can find details about [here](docs/cheatsheet.md).
+### Generators
+
+All of the generators in undertaker follow a similar pattern. Numeric generators have three arities:
+```java
+source.getInt();
+```
+The no argument version produces all the values allowed by that type. 
+
+```java
+source.getInt(maxValue);
+```
+
+The single argument, max value case produces any value up to and including the value specified. 
+This always includes negative values, so if you only want positive values you'll need the next arity. 
+
+```java
+source.getInt(minValue, maxValue);
+```
+
+In the two argument case the method will produce values between min and max, which are again inclusive not exclusive.
+
+```java
+source.getList(IntSource::getInt);
+```
+
+The collection generators all take a generator as their first argument. The primitive array generators are the only 
+exception to this rule: `source.getDoubleArray()` is fine.
+
+```java
+source.getList(LongSource::getLong, size);
+```
+
+The second argument is for producing a collection of fixed size. 
+
+```java
+source.getList(StringSource::getString, minSize, maxSize)
+```
+
+When you add a third argument, the second arg is treated as the minimum allowed size of the collection, and the third 
+argument as the maximum allowed size of the collection.
+
+The map source is a slight exception to these rules, since you have to feed it two generator functions rather than one:
+
+```java
+source.getMap(ShortSource::getShort, StringSource::getString)
+```
+
+There is also an option to provide a `BiFunction<Source, K>` as the second generator, where `K` is the type of the key.
+This means you can make more heterogeneous collections.
+
+<!--TODO: CharSource, StringSource -->
+
+There's a cheat sheet with more examples [here](docs/cheatsheet.md), or you can always spin up debugger and sample 
+input from the source to get an idea of how the various generators work.
 
 ## License
 
