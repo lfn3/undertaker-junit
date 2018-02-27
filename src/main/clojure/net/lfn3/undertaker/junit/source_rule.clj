@@ -17,7 +17,8 @@
            (net.lfn3.undertaker.junit.primitive.functions ToBooleanFunction ToByteFunction ToCharFunction ToFloatFunction ToShortFunction))
   (:require [net.lfn3.undertaker.core :as undertaker]
             [net.lfn3.undertaker.source :as source]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.core :as core]))
 
 (defn -init
   ([] (-init {}))
@@ -127,7 +128,10 @@
   ([_] (undertaker/boolean)))
 
 (defn ^char -getChar
-  ([_] (undertaker/char)))
+  ([_] (undertaker/char))
+  ([this code-point-gen]
+   (undertaker/with-interval
+     (core/unchecked-char (.applyAsShort code-point-gen this)))))
 
 (defn ^char -getAsciiChar
   ([_] (undertaker/char-ascii)))

@@ -2,16 +2,12 @@ package net.lfn3.undertaker.junit;
 
 import net.lfn3.undertaker.junit.generators.CodePoints;
 import net.lfn3.undertaker.junit.primitive.functions.ToByteFunction;
-import net.lfn3.undertaker.junit.sources.ByteSource;
-import net.lfn3.undertaker.junit.sources.IntArraySource;
-import net.lfn3.undertaker.junit.sources.IntSource;
-import net.lfn3.undertaker.junit.sources.StringSource;
+import net.lfn3.undertaker.junit.sources.*;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 
@@ -207,13 +203,16 @@ public class SourceRuleTest {
     @Test
     public void canGetEveryKindOfChar() {
         final char c = source.getChar();
-        final char ascii = source.getAsciiChar();
+        final char ascii = source.getChar(CodePoints.ASCII);
 
-        final char alpha = source.getAlphaChar();
+        final char alpha = source.getChar(CodePoints.ALPHA);
         Assert.assertTrue(Character.isAlphabetic(alpha));
 
-        final char alphaNum = source.getAlphanumericChar();
+        final char alphaNum = source.getChar(CodePoints.ALPHANUMERIC);
         Assert.assertTrue(Character.isAlphabetic(alphaNum) || Character.isDigit(alphaNum));
+
+        final char customRange = source.getChar(s -> s.getShort(48, 57));
+        Assert.assertTrue(Character.isDigit(customRange));
     }
 
     @Test
@@ -281,11 +280,11 @@ public class SourceRuleTest {
             }
         });
 
-        final Map<Integer, Character> fixedSize = source.getMap(Source::getInt, Source::getChar, 5);
+        final Map<Integer, Character> fixedSize = source.getMap(Source::getInt, (Generator<Character>) CharSource::getChar, 5);
         Assert.assertTrue(fixedSize.size() == 5);
 
 
-        final Map<Integer, Character> sized = source.getMap(Source::getInt, Source::getChar, 5, 10);
+        final Map<Integer, Character> sized = source.getMap(Source::getInt, (Generator<Character>) Source::getChar, 5, 10);
         Assert.assertTrue(5 <= sized.size());
         Assert.assertTrue(sized.size() <= 10);
     }
