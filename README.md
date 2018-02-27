@@ -118,6 +118,8 @@ There's also collection style overloads on strings, as shown.
 There's examples of all of the generators in this codebase [here](src/test/java/net/lfn3/undertaker/junit/SourceRuleTest.java)
 or you can always spin up debugger and sample input from the source to get an idea of how the various generators work.
 
+<!--TODO: Talk about Intervals, custom generators -->
+
 ## License
 
 Copyright © 2017 Liam Falconer
