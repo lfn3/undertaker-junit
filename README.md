@@ -45,7 +45,7 @@ public void testIntsAreEven() { ... }
 
 The messages produced by Undertaker are fairly verbose.
 
-### Generators
+## Generators
 
 All of the generators in undertaker follow a similar pattern. Numeric generators have three arities.
 The no argument version produces all the values allowed by that type:
@@ -117,6 +117,47 @@ There's also collection style overloads on strings, as shown.
 
 There's examples of all of the generators in this codebase [here](src/test/java/net/lfn3/undertaker/junit/SourceRuleTest.java)
 or you can always spin up debugger and sample input from the source to get an idea of how the various generators work.
+
+## Writing your own generators
+
+Generators are simply functions from `Source` to `T`. This basically means you can write them however you want, but 
+so far I think I prefer static factory functions:
+
+```java
+public static final Generator<Date> GENERATE_DATE = s -> Date.from(Instant.ofEpochMilli(s.getLong()));
+
+@Test
+public void canGenerateWithFunction() {
+    final Date generated = source.generate(SourceRuleTest.GENERATE_DATE);
+    Assert.assertNotNull(generated);
+}
+```
+
+If you're building larger objects you might prefer to provide a constructor:
+
+```java
+public class NewClass
+{
+    final int anInt;
+    public NewClass(Source s)
+    {
+        anInt = source.getInt(0, Integer.MAX_VALUE);
+    }
+}
+
+@Test
+public void canGenerateWithNew() {
+    final NewClass n = source.generate(NewClass::new);
+    Assert.assertTrue(n != null);
+    Assert.assertTrue(0 <= n.anInt);
+}
+```
+
+However this might mean leaking this library into your "business" objects.
+
+Writing generators will obviously get harder as your generators get bigger or are required to generate more complex 
+objects. There's one technique we've use successfully so far, which is the use of intermediate `Scenario` objects.
+
 
 <!--TODO: Talk about Intervals, custom generators -->
 

@@ -98,7 +98,7 @@ public class SourceRuleTest {
 
     @Test
     public void canGetAList() {
-        final List<Date> list = source.getList(SourceRuleTest::generateDate);
+        final List<Date> list = source.getList(SourceRuleTest.GENERATE_DATE);
         Assert.assertNotNull(list);
 
         final List<GeneratorMapTestClass> fixedSize = source.getList(s -> s.generate(GeneratorMapTestClass.class), 5);
@@ -112,7 +112,7 @@ public class SourceRuleTest {
 
     @Test
     public void canGetAnArray() {
-        final Date[] anArray = source.getArray(Date.class, SourceRuleTest::generateDate);
+        final Date[] anArray = source.getArray(Date.class, SourceRuleTest.GENERATE_DATE);
         Assert.assertNotNull(anArray);
 
         final GeneratorMapTestClass[] fixedSize = source.getArray(
@@ -134,7 +134,7 @@ public class SourceRuleTest {
 
     @Test
     public void canGenerateWithFunction() {
-        final Date generated = source.generate(SourceRuleTest::generateDate);
+        final Date generated = source.generate(SourceRuleTest.GENERATE_DATE);
         Assert.assertNotNull(generated);
 
         final Date functionGenerated = source.generate(DATE_GENERATOR);
@@ -386,13 +386,23 @@ public class SourceRuleTest {
         Assert.assertNotNull(anotherArray);
     }
 
-    public static Date generateDate(Source s) {
-        s.pushInterval();
-        final Date generatedValue = Date.from(Instant.ofEpochSecond(s.getInt()));
-        s.popInterval(generatedValue);
-
-        return generatedValue;
+    @Test
+    public void canGenerateWithNew() {
+        final NewClass n = source.generate(NewClass::new);
+        Assert.assertTrue(n != null);
+        Assert.assertTrue(0 <= n.anInt );
     }
+
+    public class NewClass
+    {
+        final int anInt;
+        public NewClass(Source s)
+        {
+            anInt = source.getInt(0, Integer.MAX_VALUE);
+        }
+    }
+
+    public static final Generator<Date> GENERATE_DATE = s -> Date.from(Instant.ofEpochMilli(s.getLong()));
 
     public static class GeneratorMapTestClass {
         public final String s;
