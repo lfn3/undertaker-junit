@@ -142,6 +142,8 @@ SomeClassThatsTooBig instance = source.reflectively(SomeClassThatsTooBig.class);
 
 It does of course have some caveats. It only works on concrete classes. It may run into something it can't figure how to
 generate reflectively, in which case I'd recommend adding that class to the Generator map you can feed into your source.
+The reflective generators are great for testing marshalling or serialization of objects, without the tedious process of
+manually filling them out. 
 
 There's examples of all of the generators in this codebase [here](src/test/java/net/lfn3/undertaker/junit/SourceRuleTest.java)
 or you can always spin up debugger and sample input from the source to get an idea of how the various generators work.
