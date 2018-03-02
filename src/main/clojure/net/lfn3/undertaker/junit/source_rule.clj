@@ -67,6 +67,13 @@
                 (.value))
         default)))
 
+(defn java-seed-message [name {:keys [:net.lfn3.undertaker.core/seed]}]
+  (format "To rerun this particular failing case you can add an annotation to the test:
+@Test
+@net.lfn3.undertaker.undertaker.junit.Seed(%s)
+public void %s() { ... }"
+          seed name))
+
 (defn ^Statement -apply [_ ^Statement base ^Description description]
   (proxy [Statement] []
     (evaluate []
@@ -87,7 +94,7 @@
                                                   (dorun))))]
           (when (false? (get-in result [::undertaker/initial-results ::undertaker/result]))
             (let [test-name (first (str/split (.getDisplayName description) #"\("))
-                  message (undertaker/format-results test-name result)
+                  message (str (undertaker/format-results test-name result java-seed-message))
                   cause (or (get-in result [::undertaker/shrunk-results ::undertaker/cause])
                             (get-in result [::undertaker/initial-results ::undertaker/cause]))]
               (throw (override-delegate
