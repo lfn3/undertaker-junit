@@ -32,15 +32,10 @@ The initial failing values were:
 [760405255]
 
 The seed that generated the initial case was 8006585014295842258.
-If you want to rerun this particular failing case, you can add this seed to the test.
-
-If you're using Clojure, you can add :seed to this test's options map:
-(defprop testIntsAreEven {:seed 8006585014295842258} ...)
-
-If you're using Java and jUnit, you can add an annotation to the test:
+To rerun this particular failing case you can add an annotation to the test:
 @Test
-@net.lfn3.undertaker.undertaker.junit.Seed(8006585014295842258)
-public void testIntsAreEven() { ... }
+@net.lfn3.undertaker.undertaker.junit.Seed(8006649660925287978)
+public void canFailWithNiceishMessageWhenUsingAGenerator() { ... }
 ```
 
 The messages produced by Undertaker are fairly verbose, and you might see some unusual stuff in the simplest and initial
@@ -222,7 +217,7 @@ public class MatchingOrdersScenario
 These let you knit together several related objects at while generating them, and then pull out the individual parts as
 needed during a test. They also compose relatively well, since you can pass the Source further down to other scenarios.
 
-### Intervals
+## Intervals
 
 One thing you might have noticed in the above scenario is the use of `source.generate(...)`. This is used to ensure
 the value we've tweaked by adding target price shows up in our output. What determines if the an elements appears in the
