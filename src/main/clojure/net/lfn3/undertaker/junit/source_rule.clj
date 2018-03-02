@@ -70,7 +70,7 @@
 (defn java-seed-message [name {:keys [:net.lfn3.undertaker.core/seed]}]
   (format "To rerun this particular failing case you can add an annotation to the test:
 @Test
-@net.lfn3.undertaker.undertaker.junit.Seed(%s)
+@net.lfn3.undertaker.junit.Seed(%s)
 public void %s() { ... }"
           seed name))
 
