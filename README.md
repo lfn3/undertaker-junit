@@ -43,7 +43,10 @@ If you're using Java and jUnit, you can add an annotation to the test:
 public void testIntsAreEven() { ... }
 ```
 
-The messages produced by Undertaker are fairly verbose.
+The messages produced by Undertaker are fairly verbose, and you might see some unusual stuff in the simplest and initial
+failing values parts. These come from [Clojure](https://clojure.org/), so if you already know how to read it, you should 
+be fine. Otherwise: `#{1 2 3}` is a set (of integers). `{"hello" 1}` is a map, containing `"hello"` as a key pointing to 
+the value `1`.
 
 ## The Source Rule
 
@@ -219,9 +222,12 @@ public class MatchingOrdersScenario
 One thing you might have noticed in the above scenario is the use of `source.generate(...)`. This is used to ensure
 the value we've tweaked by adding target price shows up in our output. What determines if the an elements appears in the
 printed output? It's got to be encased in an interval (a data structure internal to undertaker) and at the top level
-(not inside another interval). 
+(not inside another interval). You probably don't need to worry about this too much when you're writing a test.
+I'd recommend that if you encounter a test failure you go back through and add calls to generate (or the more primitive
+`pushInterval` and `popInterval` operations, which appear inside generate) as necessary to give you output that makes 
+sense.
 
-<!--TODO: Talk about Intervals, custom generators -->
+<!--TODO: More on intervals -->
 
 ## License
 
