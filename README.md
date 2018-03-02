@@ -219,6 +219,11 @@ public class MatchingOrdersScenario
 }
 ```
 
+These let you knit together several related objects at while generating them, and then pull out the individual parts as
+needed during a test. They also compose relatively well, since you can pass the Source further down to other scenarios.
+
+### Intervals
+
 One thing you might have noticed in the above scenario is the use of `source.generate(...)`. This is used to ensure
 the value we've tweaked by adding target price shows up in our output. What determines if the an elements appears in the
 printed output? It's got to be encased in an interval (a data structure internal to undertaker) and at the top level
@@ -226,6 +231,10 @@ printed output? It's got to be encased in an interval (a data structure internal
 I'd recommend that if you encounter a test failure you go back through and add calls to generate (or the more primitive
 `pushInterval` and `popInterval` operations, which appear inside generate) as necessary to give you output that makes 
 sense.
+
+By default Undertaker doesn't show the intervals used in a particular test case. You can use the `@Debug(true)` 
+annotation on a test to show a *lot* more information about what exactly is going on inside Undertaker during a test,
+including the intervals used, or if you're curious and just want to see how it works.
 
 <!--TODO: More on intervals -->
 
