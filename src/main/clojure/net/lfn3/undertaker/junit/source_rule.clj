@@ -10,7 +10,7 @@
            (org.junit.runner Description JUnitCore Computer Request)
            (java.util List ArrayList Map Collection Set)
            (java.util.function Function BiFunction)
-           (java.lang.reflect Modifier)
+           (java.lang.reflect Modifier Method)
            (net.lfn3.undertaker.junit Seed Trials)
            (net.lfn3.undertaker.junit Generator)
            (net.lfn3.undertaker.junit.generators IntGenerator CodePoints ShortGenerator)
@@ -198,13 +198,15 @@
   ([_ ^Collection c] (undertaker/elements c)))
 
 (defn -generate
-  ([this ^Generator g] (.apply g this)))
+  ([this ^Generator g] (undertaker/with-interval
+                         (.apply g this))))
 
 (defn -generate-Class
   ([this ^Class c]
    (let [{:keys [class->generator]} (.state this)]
      (if-let [g (get class->generator c)]
-       (.apply g this)
+       (undertaker/with-interval
+         (.apply g this))
        (throw (ex-info (str "Could not find generator for " (.getName c) " in Source's class->generator map") {}))))))
 
 (defn -getNullable
@@ -212,13 +214,17 @@
                                                1 (constantly nil)]])))
 
 (def generate-from-class)
+(def -reflectively-Method)
 
 (defn -reflectively
   ([this c]
    (let [is-class? (class? c)
-         generated (and is-class? (generate-from-class this c))]
-     (if (and is-class? (not= ::not-genned generated))
-       generated
+         generated (and is-class? (generate-from-class this c))
+         method? (instance? Method c)]
+     (cond
+       method? (-reflectively-Method this c)
+       (and is-class? (not= ::not-genned generated)) generated
+       :default
        (do
          (when (and is-class? (.isInterface c))
            (throw (IllegalArgumentException. (str "Can't reflectively generate an interface. "
@@ -243,7 +249,20 @@
                 (map #(.getType %1))
                 (map #(-reflectively this %1))
                 (into-array Object)
-                (.newInstance constructor))))))))
+                (.newInstance constructor)))))))
+  ([this ^Method m instance]
+    (-reflectively-Method this m instance)))
+
+(defn -reflectively-Method
+  ([this ^Method m]
+   (-reflectively-Method this m (-reflectively this (.getDeclaringClass m))))
+  ([this ^Method m instance]
+   (let [generated-parameters (->> (.getParameters m)
+                                   (map #(.getType %1))
+                                   (map #(-reflectively this %1))
+                                   (to-array))]
+     (.invoke m instance generated-parameters))))
+
 
 (defmacro get-array-fn [type-hint type-str specialize-from]
   (let [camelcased-type-str (str (str/upper-case (first type-str)) (apply str (rest type-str)))

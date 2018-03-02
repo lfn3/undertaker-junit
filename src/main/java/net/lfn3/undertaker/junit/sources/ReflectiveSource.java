@@ -11,4 +11,5 @@ public interface ReflectiveSource {
     <T> T reflectively(Function<?, T> function);
     <T> T reflectively(BiFunction<?, ?, T> function);
     <T> T reflectively(Method function);
+    <T, R> T reflectively(Method toInvoke, R instance);
 }

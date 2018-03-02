@@ -351,6 +351,10 @@ public class SourceRuleTest {
         final ClassWithStaticConstructor aClass =
                 source.generate(s -> ClassWithStaticConstructor.constructor(s.reflectively(ClassWithConstructor.class)));
         Assert.assertNotNull(aClass);
+
+        source.reflectively(ClassWithStaticConstructor.class.getMethod("doAThing"));
+        source.reflectively(ClassWithStaticConstructor.class.getMethod("doAThing"), aClass);
+        Assert.assertEquals(1, aClass.didAThing);
     }
 
     @Test
@@ -418,8 +422,14 @@ public class SourceRuleTest {
     }
 
     public static class ClassWithStaticConstructor {
+        public int didAThing = 0;
         public static ClassWithStaticConstructor constructor(ClassWithConstructor c) {
             return new ClassWithStaticConstructor();
+        }
+
+        public void doAThing()
+        {
+            didAThing += 1;
         }
     }
 }
