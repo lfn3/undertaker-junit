@@ -80,14 +80,14 @@ public void %s() { ... }"
       (if (not *nested*)                                    ;Check we're not already inside this rule
         (let [seed (get-annotation-value Seed description (undertaker/next-seed (System/nanoTime)))
               trials (get-annotation-value Trials description 1000)
-              debug (get-annotation-value Debug description false)
+              debug? (get-annotation-value Debug description false)
               junit (JUnitCore.)
               _ (Computer.)
               class (resolve (symbol (.getClassName description)))
               test-request (Request/method class (.getMethodName description))
               result (undertaker/run-prop {:seed       seed
                                            :iterations trials
-                                           :debug debug}
+                                           :debug debug?}
                                           #(with-bindings {#'*nested* true}
                                              (->> (.run junit test-request)
                                                   (.getFailures)
@@ -96,7 +96,7 @@ public void %s() { ... }"
                                                   (dorun))))]
           (when (false? (get-in result [::undertaker/initial-results ::undertaker/result]))
             (let [test-name (first (str/split (.getDisplayName description) #"\("))
-                  message (str (undertaker/format-results test-name result java-seed-message))
+                  message (undertaker/format-results test-name result java-seed-message debug?)
                   cause (or (get-in result [::undertaker/shrunk-results ::undertaker/cause])
                             (get-in result [::undertaker/initial-results ::undertaker/cause]))]
               (throw (override-delegate
