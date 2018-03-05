@@ -12,7 +12,7 @@
            (java.util.function Function BiFunction)
            (java.lang.reflect Modifier Method)
            (net.lfn3.undertaker.junit Seed Trials)
-           (net.lfn3.undertaker.junit Generator)
+           (net.lfn3.undertaker.junit Generator Debug)
            (net.lfn3.undertaker.junit.generators IntGenerator CodePoints ShortGenerator)
            (net.lfn3.undertaker.junit.primitive.functions ToBooleanFunction ToByteFunction ToCharFunction ToFloatFunction ToShortFunction))
   (:require [net.lfn3.undertaker.core :as undertaker]
@@ -80,12 +80,14 @@ public void %s() { ... }"
       (if (not *nested*)                                    ;Check we're not already inside this rule
         (let [seed (get-annotation-value Seed description (undertaker/next-seed (System/nanoTime)))
               trials (get-annotation-value Trials description 1000)
+              debug (get-annotation-value Debug description false)
               junit (JUnitCore.)
               _ (Computer.)
               class (resolve (symbol (.getClassName description)))
               test-request (Request/method class (.getMethodName description))
               result (undertaker/run-prop {:seed       seed
-                                           :iterations trials}
+                                           :iterations trials
+                                           :debug debug}
                                           #(with-bindings {#'*nested* true}
                                              (->> (.run junit test-request)
                                                   (.getFailures)
