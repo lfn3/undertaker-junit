@@ -19,5 +19,6 @@
 
   :profiles {:provided {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :sources {:aot ^:replace []
-                       :jar-name "undertaker-junit-sources-%s.jar"}}
+                       :jar-name "undertaker-junit-sources-%s.jar"}
+             :test {:java-source-paths ["src/test/java"]}}
   :aliases {"junit" ["do" ["clean"] ["compile"] ["with-profile" "test,provided" "junit"]]})
