@@ -47,7 +47,7 @@
                                  (not (Modifier/isProtected (.getModifiers m))))
                       :let [args (for [t (.getParameterTypes m)]
                                    (add-tag-meta-if-applicable (gensym) t))]]
-                  (list f (vec (conj args 'this))
+                  (list f (vec args)
                         `(. ~d ~f ~@(map #(with-meta % nil) args))))
         grouped-methods (->> methods
                              (group-by first)
@@ -82,7 +82,6 @@ public void %s() { ... }"
               trials (get-annotation-value Trials description 1000)
               debug? (get-annotation-value Debug description false)
               junit (JUnitCore.)
-              _ (Computer.)
               class (resolve (symbol (.getClassName description)))
               test-request (Request/method class (.getMethodName description))
               result (undertaker/run-prop {:seed       seed
