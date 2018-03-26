@@ -1,9 +1,9 @@
-(defproject net.lfn3/undertaker-junit "0.1.2"
+(defproject net.lfn3/undertaker-junit "0.1.3"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Apache License Version 2.0"
             :url  "http://www.apache.org/licenses/LICENSE-2.0"}
-  :dependencies [[net.lfn3/undertaker "0.1.2"]
+  :dependencies [[net.lfn3/undertaker "0.1.3"]
                  [junit "4.12"]]
 
   :plugins [[lein-junit "1.1.8"]]
