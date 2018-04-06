@@ -1,19 +1,19 @@
 package net.lfn3.undertaker.junit.sources;
 
 public interface ByteSource {
-    default byte getByte()
+    default byte nextByte()
     {
-        return getByte(Byte.MIN_VALUE, Byte.MAX_VALUE);
+        return nextByte(Byte.MIN_VALUE, Byte.MAX_VALUE);
     }
 
-    default byte getByte(byte max)
+    default byte nextByte(byte max)
     {
-        return getByte(Byte.MIN_VALUE, max);
+        return nextByte(Byte.MIN_VALUE, max);
     }
 
-    byte getByte(byte min, byte max);
+    byte nextByte(byte min, byte max);
 
-    byte getByte(int max);
+    byte nextByte(int max);
 
-    byte getByte(int min, int max);
+    byte nextByte(int min, int max);
 }

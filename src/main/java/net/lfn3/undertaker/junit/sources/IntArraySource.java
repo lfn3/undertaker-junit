@@ -5,17 +5,17 @@ import net.lfn3.undertaker.junit.Source;
 import java.util.function.ToIntFunction;
 
 public interface IntArraySource {
-    default int[] getIntArray()
+    default int[] nextIntArray()
     {
-        return getIntArray(IntSource::getInt);
+        return nextIntArray(IntSource::nextInt);
     }
-    default int[] getIntArray(ToIntFunction<Source> generator)
+    default int[] nextIntArray(ToIntFunction<Source> generator)
     {
-        return getIntArray(generator, 0, 64);
+        return nextIntArray(generator, 0, 64);
     }
-    default int[] getIntArray(ToIntFunction<Source> generator, int size)
+    default int[] nextIntArray(ToIntFunction<Source> generator, int size)
     {
-        return getIntArray(generator, size, size);
+        return nextIntArray(generator, size, size);
     }
-    int[] getIntArray(ToIntFunction<Source> generator, int minSize, int maxSize);
+    int[] nextIntArray(ToIntFunction<Source> generator, int minSize, int maxSize);
 }

@@ -5,17 +5,17 @@ import net.lfn3.undertaker.junit.Source;
 import java.util.function.ToLongFunction;
 
 public interface LongArraySource {
-    default long[] getLongArray()
+    default long[] nextLongArray()
     {
-        return getLongArray(LongSource::getLong);
+        return nextLongArray(LongSource::nextLong);
     }
-    default long[] getLongArray(ToLongFunction<Source> generator)
+    default long[] nextLongArray(ToLongFunction<Source> generator)
     {
-        return getLongArray(generator, 0, 64);
+        return nextLongArray(generator, 0, 64);
     }
-    default long[] getLongArray(ToLongFunction<Source> generator, int size)
+    default long[] nextLongArray(ToLongFunction<Source> generator, int size)
     {
-        return getLongArray(generator, size, size);
+        return nextLongArray(generator, size, size);
     }
-    long[] getLongArray(ToLongFunction<Source> generator, int minSize, int maxSize);
+    long[] nextLongArray(ToLongFunction<Source> generator, int minSize, int maxSize);
 }

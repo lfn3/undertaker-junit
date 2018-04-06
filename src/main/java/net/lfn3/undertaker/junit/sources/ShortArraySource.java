@@ -4,17 +4,17 @@ import net.lfn3.undertaker.junit.Source;
 import net.lfn3.undertaker.junit.primitive.functions.ToShortFunction;
 
 public interface ShortArraySource {
-    default short[] getShortArray()
+    default short[] nextShortArray()
     {
-        return getShortArray(ShortSource::getShort);
+        return nextShortArray(ShortSource::nextShort);
     }
-    default short[] getShortArray(ToShortFunction<Source> generator)
+    default short[] nextShortArray(ToShortFunction<Source> generator)
     {
-        return getShortArray(generator, 0, 64);
+        return nextShortArray(generator, 0, 64);
     }
-    default short[] getShortArray(ToShortFunction<Source> generator, int size)
+    default short[] nextShortArray(ToShortFunction<Source> generator, int size)
     {
-        return getShortArray(generator, size, size);
+        return nextShortArray(generator, size, size);
     }
-    short[] getShortArray(ToShortFunction<Source> generator, int minSize, int maxSize);
+    short[] nextShortArray(ToShortFunction<Source> generator, int minSize, int maxSize);
 }

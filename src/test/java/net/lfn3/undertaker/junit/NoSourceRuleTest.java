@@ -8,6 +8,6 @@ public class NoSourceRuleTest {
     @Ignore
     public void showsErrorMessageIfSourceRuleIsMissing() throws Exception {
         Source source = new SourceRule();
-        source.getBool();
+        source.nextBool();
     }
 }

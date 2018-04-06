@@ -110,50 +110,41 @@ public void %s() { ... }"
 (defn -popInterval [_ generated-value]
   (source/pop-interval undertaker/*source* generated-value))
 
-(defn ^byte -getByte
-  ([this] (-getByte this Byte/MIN_VALUE Byte/MAX_VALUE))
-  ([this max] (-getByte this Byte/MIN_VALUE max))
+(defn ^byte -nextByte
+  ([this] (-nextByte this Byte/MIN_VALUE Byte/MAX_VALUE))
+  ([this max] (-nextByte this Byte/MIN_VALUE max))
   ([_ min max] (undertaker/byte min max)))
 
-(defn ^short -getShort
-  ([this] (-getShort this Short/MIN_VALUE Short/MAX_VALUE))
-  ([this max] (-getShort this Integer/MIN_VALUE max))
+(defn ^short -nextShort
+  ([this] (-nextShort this Short/MIN_VALUE Short/MAX_VALUE))
+  ([this max] (-nextShort this Integer/MIN_VALUE max))
   ([_ min max] (undertaker/short min max))
   ([_ min max & more-ranges] (apply undertaker/short min max more-ranges)))
 
-(defn ^int -getInt
-  ([this] (-getInt this Integer/MIN_VALUE Integer/MAX_VALUE))
-  ([this max] (-getInt this Integer/MIN_VALUE max))
+(defn ^int -nextInt
+  ([this] (-nextInt this Integer/MIN_VALUE Integer/MAX_VALUE))
+  ([this max] (-nextInt this Integer/MIN_VALUE max))
   ([_ min max] (undertaker/int min max))
   ([_ min max & more-ranges] (apply undertaker/int min max more-ranges)))
 
-(defn ^long -getLong
-  ([this] (-getLong this Long/MIN_VALUE Long/MAX_VALUE))
-  ([this max] (-getLong this Long/MIN_VALUE max))
+(defn ^long -nextLong
+  ([this] (-nextLong this Long/MIN_VALUE Long/MAX_VALUE))
+  ([this max] (-nextLong this Long/MIN_VALUE max))
   ([_ min max] (undertaker/long min max)))
 
-(defn ^boolean -getBool
+(defn ^boolean -nextBool
   ([_] (undertaker/boolean)))
 
-(defn ^char -getChar
+(defn ^char -nextChar
   ([_] (undertaker/char))
   ([this code-point-gen]
    (undertaker/with-interval
      (core/unchecked-char (.applyAsShort code-point-gen this)))))
 
-(defn ^char -getAsciiChar
-  ([_] (undertaker/char-ascii)))
-
-(defn ^char -getAlphanumericChar
-  ([_] (undertaker/char-alphanumeric)))
-
-(defn ^char -getAlphaChar
-  ([_] (undertaker/char-alpha)))
-
-(defn ^String -getString
-  ([this] (-getString this CodePoints/ANY 0 undertaker/default-string-max-size))
-  ([this ^ShortGenerator intGen] (-getString this intGen 0 undertaker/default-string-max-size))
-  ([this ^ShortGenerator intGen size] (-getString this intGen size size))
+(defn ^String -nextString
+  ([this] (-nextString this CodePoints/ANY 0 undertaker/default-string-max-size))
+  ([this ^ShortGenerator intGen] (-nextString this intGen 0 undertaker/default-string-max-size))
+  ([this ^ShortGenerator intGen size] (-nextString this intGen size size))
   ([this ^ShortGenerator intGen min max]
    (undertaker/with-interval
      (->> (undertaker/vec-of #(.applyAsShort intGen this) min max)
@@ -161,45 +152,45 @@ public void %s() { ... }"
           (char-array)
           (String.)))))
 
-(defn ^float -getFloat
-  ([this] (-getFloat this (- Float/MAX_VALUE) Float/MAX_VALUE))
-  ([this max] (-getFloat this (- Float/MAX_VALUE) max))
+(defn ^float -nextFloat
+  ([this] (-nextFloat this (- Float/MAX_VALUE) Float/MAX_VALUE))
+  ([this max] (-nextFloat this (- Float/MAX_VALUE) max))
   ([_ min max] (undertaker/float min max)))
 
-(defn ^double -getDouble
-  ([this] (-getDouble this (- Double/MAX_VALUE) Double/MAX_VALUE))
-  ([this max] (-getDouble this (- Double/MAX_VALUE) max))
+(defn ^double -nextDouble
+  ([this] (-nextDouble this (- Double/MAX_VALUE) Double/MAX_VALUE))
+  ([this max] (-nextDouble this (- Double/MAX_VALUE) max))
   ([_ min max] (undertaker/double min max)))
 
-(defn ^double -getRealDouble
-  ([this] (-getRealDouble this (- Double/MAX_VALUE) Double/MAX_VALUE))
-  ([this max] (-getRealDouble this (- Double/MAX_VALUE) max))
+(defn ^double -nextRealDouble
+  ([this] (-nextRealDouble this (- Double/MAX_VALUE) Double/MAX_VALUE))
+  ([this max] (-nextRealDouble this (- Double/MAX_VALUE) max))
   ([_ min max] (undertaker/real-double min max)))
 
-(defn ^List -getList
-  ([this ^Function generator] (-getList this generator 0 64))
-  ([this ^Function generator size] (-getList this generator size size))
+(defn ^List -nextList
+  ([this ^Function generator] (-nextList this generator 0 64))
+  ([this ^Function generator size] (-nextList this generator size size))
   ([this ^Function generator min max] (ArrayList. (undertaker/vec-of #(.apply generator this) min max))))
 
-(defn ^Map -getMap
-  ([this ^Function keyGen valGen] (-getMap this keyGen valGen 0 undertaker/default-collection-max-size))
-  ([this ^Function keyGen valGen size] (-getMap this keyGen valGen size size))
+(defn ^Map -nextMap
+  ([this ^Function keyGen valGen] (-nextMap this keyGen valGen 0 undertaker/default-collection-max-size))
+  ([this ^Function keyGen valGen size] (-nextMap this keyGen valGen size size))
   ([this ^Function keyGen valGen minSize maxSize]
    (if (instance? BiFunction valGen)
      (undertaker/map-of #(.apply keyGen this) #(.apply valGen this %1) minSize maxSize {:value-gen-takes-key-as-arg true})
      (undertaker/map-of #(.apply keyGen this) #(.apply valGen this) minSize maxSize))))
 
-(defn ^Set -getSet
-  ([this ^Function generator] (-getSet this generator 0 undertaker/default-collection-max-size))
-  ([this ^Function generator size] (-getSet this generator size size))
+(defn ^Set -nextSet
+  ([this ^Function generator] (-nextSet this generator 0 undertaker/default-collection-max-size))
+  ([this ^Function generator size] (-nextSet this generator size size))
   ([this ^Function generator minSize maxSize] (undertaker/set-of #(.apply generator this) minSize maxSize)))
 
-(defn -getArray
-  ([this ^Class c ^Function generator] (-getArray this c generator 0 64))
-  ([this ^Class c ^Function generator size] (-getArray this c generator size size))
+(defn -nextArray
+  ([this ^Class c ^Function generator] (-nextArray this c generator 0 64))
+  ([this ^Class c ^Function generator size] (-nextArray this c generator size size))
   ([this ^Class c ^Function generator min max] (into-array c (undertaker/vec-of #(.apply generator this) min max))))
 
-(defn -getEnum
+(defn -nextEnum
   ([_ ^Class c] (undertaker/elements (.getEnumConstants c))))
 
 (defn -from
@@ -217,7 +208,7 @@ public void %s() { ... }"
          (.apply g this))
        (throw (ex-info (str "Could not find generator for " (.getName c) " in Source's class->generator map") {}))))))
 
-(defn -getNullable
+(defn -nextNullable
   ([this ^Generator g] (undertaker/frequency [[20 #(.apply g this)
                                                1 (constantly nil)]])))
 
@@ -274,7 +265,7 @@ public void %s() { ... }"
 
 (defmacro get-array-fn [type-hint type-str specialize-from]
   (let [camelcased-type-str (str (str/upper-case (first type-str)) (apply str (rest type-str)))
-        fn-name (symbol (str "-get" camelcased-type-str "Array"))
+        fn-name (symbol (str "-next" camelcased-type-str "Array"))
         array-fn-name (symbol (str type-str "-array"))
         generator-name (symbol "undertaker" type-str)
         apply-fn (symbol (str "applyAs" camelcased-type-str))
@@ -301,7 +292,7 @@ public void %s() { ... }"
 
 (defn generate-array-reflectively [this array-class-string]
   (let [class (Class/forName array-class-string)]
-    (-getArray this class (partial -reflectively this class))))
+    (-nextArray this class (partial -reflectively this class))))
 
 (defn generate-from-class [this class]
   (let [{:keys [class->generator]} (.state this)
@@ -319,14 +310,14 @@ public void %s() { ... }"
       (or (= class Boolean) (= class Boolean/TYPE)) (undertaker/boolean)
       (= class String) (undertaker/string)
 
-      (= class (Class/forName "[J")) (-getLongArray this)
-      (= class (Class/forName "[B")) (-getByteArray this)
-      (= class (Class/forName "[C")) (-getCharArray this)
-      (= class (Class/forName "[D")) (-getDoubleArray this)
-      (= class (Class/forName "[F")) (-getFloatArray this)
-      (= class (Class/forName "[I")) (-getIntArray this)
-      (= class (Class/forName "[S")) (-getShortArray this)
-      (= class (Class/forName "[Z")) (-getBooleanArray this)
+      (= class (Class/forName "[J")) (-nextLongArray this)
+      (= class (Class/forName "[B")) (-nextByteArray this)
+      (= class (Class/forName "[C")) (-nextCharArray this)
+      (= class (Class/forName "[D")) (-nextDoubleArray this)
+      (= class (Class/forName "[F")) (-nextFloatArray this)
+      (= class (Class/forName "[I")) (-nextIntArray this)
+      (= class (Class/forName "[S")) (-nextShortArray this)
+      (= class (Class/forName "[Z")) (-nextBooleanArray this)
 
       (str/starts-with? (.getName class) "[L") (->> class
                                                     (.getName)
@@ -334,6 +325,6 @@ public void %s() { ... }"
                                                     (apply str)
                                                     (generate-array-reflectively this))
 
-      (.isEnum class) (-getEnum this class)
+      (.isEnum class) (-nextEnum this class)
 
       :default ::not-genned)))

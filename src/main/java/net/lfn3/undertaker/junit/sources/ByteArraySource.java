@@ -4,17 +4,17 @@ import net.lfn3.undertaker.junit.Source;
 import net.lfn3.undertaker.junit.primitive.functions.ToByteFunction;
 
 public interface ByteArraySource {
-    default byte[] getByteArray()
+    default byte[] nextByteArray()
     {
-        return getByteArray(ByteSource::getByte);
+        return nextByteArray(ByteSource::nextByte);
     }
-    default byte[] getByteArray(ToByteFunction<Source> generator)
+    default byte[] nextByteArray(ToByteFunction<Source> generator)
     {
-        return getByteArray(generator, 0, 64);
+        return nextByteArray(generator, 0, 64);
     }
-    default byte[] getByteArray(ToByteFunction<Source> generator, int size)
+    default byte[] nextByteArray(ToByteFunction<Source> generator, int size)
     {
-        return getByteArray(generator, size, size);
+        return nextByteArray(generator, size, size);
     }
-    byte[] getByteArray(ToByteFunction<Source> generator, int minSize, int maxSize);
+    byte[] nextByteArray(ToByteFunction<Source> generator, int minSize, int maxSize);
 }

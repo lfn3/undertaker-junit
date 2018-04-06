@@ -4,17 +4,17 @@ import net.lfn3.undertaker.junit.Source;
 import net.lfn3.undertaker.junit.primitive.functions.ToBooleanFunction;
 
 public interface BoolArraySource {
-    default boolean[] getBooleanArray()
+    default boolean[] nextBooleanArray()
     {
-        return getBooleanArray(BoolSource::getBool);
+        return nextBooleanArray(BoolSource::nextBool);
     }
-    default boolean[] getBooleanArray(ToBooleanFunction<Source> generator)
+    default boolean[] nextBooleanArray(ToBooleanFunction<Source> generator)
     {
-        return getBooleanArray(generator, 0, 64);
+        return nextBooleanArray(generator, 0, 64);
     }
-    default boolean[] getBooleanArray(ToBooleanFunction<Source> generator, int size)
+    default boolean[] nextBooleanArray(ToBooleanFunction<Source> generator, int size)
     {
-        return getBooleanArray(generator, size, size);
+        return nextBooleanArray(generator, size, size);
     }
-    boolean[] getBooleanArray(ToBooleanFunction<Source> generator, int minSize, int maxSize);
+    boolean[] nextBooleanArray(ToBooleanFunction<Source> generator, int minSize, int maxSize);
 }

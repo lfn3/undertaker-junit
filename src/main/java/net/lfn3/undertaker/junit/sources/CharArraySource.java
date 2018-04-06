@@ -4,17 +4,17 @@ import net.lfn3.undertaker.junit.Source;
 import net.lfn3.undertaker.junit.primitive.functions.ToCharFunction;
 
 public interface CharArraySource {
-    default char[] getCharArray()
+    default char[] nextCharArray()
     {
-        return getCharArray(CharSource::getChar);
+        return nextCharArray(CharSource::nextChar);
     }
-    default char[] getCharArray(ToCharFunction<Source> generator)
+    default char[] nextCharArray(ToCharFunction<Source> generator)
     {
-        return getCharArray(generator, 0, 64);
+        return nextCharArray(generator, 0, 64);
     }
-    default char[] getCharArray(ToCharFunction<Source> generator, int size)
+    default char[] nextCharArray(ToCharFunction<Source> generator, int size)
     {
-        return getCharArray(generator, size, size);
+        return nextCharArray(generator, size, size);
     }
-    char[] getCharArray(ToCharFunction<Source> generator, int minSize, int maxSize);
+    char[] nextCharArray(ToCharFunction<Source> generator, int minSize, int maxSize);
 }

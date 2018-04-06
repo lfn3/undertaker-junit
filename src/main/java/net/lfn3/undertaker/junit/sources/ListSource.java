@@ -6,13 +6,13 @@ import java.util.List;
 
 public interface ListSource
 {
-    default <T> List<T> getList(Generator<T> generator) {
-        return getList(generator, 0, 64);
+    default <T> List<T> nextList(Generator<T> generator) {
+        return nextList(generator, 0, 64);
     }
 
-    default <T> List<T> getList(Generator<T> generator, int size) {
-        return getList(generator, size, size);
+    default <T> List<T> nextList(Generator<T> generator, int size) {
+        return nextList(generator, size, size);
     }
 
-    <T> List<T> getList(Generator<T> generator, int min, int max);
+    <T> List<T> nextList(Generator<T> generator, int min, int max);
 }

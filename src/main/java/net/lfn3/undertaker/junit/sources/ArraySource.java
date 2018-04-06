@@ -3,15 +3,15 @@ package net.lfn3.undertaker.junit.sources;
 import net.lfn3.undertaker.junit.Generator;
 
 public interface ArraySource {
-    default <T> T[] getArray(Class<T> klass, Generator<T> generator)
+    default <T> T[] nextArray(Class<T> klass, Generator<T> generator)
     {
-        return getArray(klass, generator, 0, 64);
+        return nextArray(klass, generator, 0, 64);
     }
 
-    default <T> T[] getArray(Class<T> klass, Generator<T> generator, int size)
+    default <T> T[] nextArray(Class<T> klass, Generator<T> generator, int size)
     {
-        return getArray(klass, generator, size, size);
+        return nextArray(klass, generator, size, size);
     }
 
-    <T> T[] getArray(Class<T> klass, Generator<T> generator, int min, int max);
+    <T> T[] nextArray(Class<T> klass, Generator<T> generator, int min, int max);
 }

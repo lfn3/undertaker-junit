@@ -1,15 +1,15 @@
 package net.lfn3.undertaker.junit.sources;
 
 public interface LongSource {
-    default long getLong()
+    default long nextLong()
     {
-        return getLong(Long.MIN_VALUE, Long.MAX_VALUE);
+        return nextLong(Long.MIN_VALUE, Long.MAX_VALUE);
     }
 
-    default long getLong(long max)
+    default long nextLong(long max)
     {
-        return getLong(Long.MIN_VALUE, max);
+        return nextLong(Long.MIN_VALUE, max);
     }
 
-    long getLong(long min, long max);
+    long nextLong(long min, long max);
 }

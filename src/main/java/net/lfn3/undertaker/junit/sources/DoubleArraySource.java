@@ -5,17 +5,17 @@ import net.lfn3.undertaker.junit.Source;
 import java.util.function.ToDoubleFunction;
 
 public interface DoubleArraySource {
-    default double[] getDoubleArray()
+    default double[] nextDoubleArray()
     {
-        return getDoubleArray(DoubleSource::getDouble);
+        return nextDoubleArray(DoubleSource::nextDouble);
     }
-    default double[] getDoubleArray(ToDoubleFunction<Source> generator)
+    default double[] nextDoubleArray(ToDoubleFunction<Source> generator)
     {
-        return getDoubleArray(generator, 0, 64);
+        return nextDoubleArray(generator, 0, 64);
     }
-    default double[] getDoubleArray(ToDoubleFunction<Source> generator, int size)
+    default double[] nextDoubleArray(ToDoubleFunction<Source> generator, int size)
     {
-        return getDoubleArray(generator, size, size);
+        return nextDoubleArray(generator, size, size);
     }
-    double[] getDoubleArray(ToDoubleFunction<Source> generator, int minSize, int maxSize);
+    double[] nextDoubleArray(ToDoubleFunction<Source> generator, int minSize, int maxSize);
 }

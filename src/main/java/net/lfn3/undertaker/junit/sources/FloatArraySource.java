@@ -4,17 +4,17 @@ import net.lfn3.undertaker.junit.Source;
 import net.lfn3.undertaker.junit.primitive.functions.ToFloatFunction;
 
 public interface FloatArraySource {
-    default float[] getFloatArray()
+    default float[] nextFloatArray()
     {
-        return getFloatArray(FloatSource::getFloat);
+        return nextFloatArray(FloatSource::nextFloat);
     }
-    default float[] getFloatArray(ToFloatFunction<Source> generator)
+    default float[] nextFloatArray(ToFloatFunction<Source> generator)
     {
-        return getFloatArray(generator, 0, 64);
+        return nextFloatArray(generator, 0, 64);
     }
-    default float[] getFloatArray(ToFloatFunction<Source> generator, int size)
+    default float[] nextFloatArray(ToFloatFunction<Source> generator, int size)
     {
-        return getFloatArray(generator, size, size);
+        return nextFloatArray(generator, size, size);
     }
-    float[] getFloatArray(ToFloatFunction<Source> generator, int minSize, int maxSize);
+    float[] nextFloatArray(ToFloatFunction<Source> generator, int minSize, int maxSize);
 }
