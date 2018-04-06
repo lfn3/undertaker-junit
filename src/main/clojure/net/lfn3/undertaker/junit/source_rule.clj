@@ -208,7 +208,7 @@ public void %s() { ... }"
          (.apply g this))
        (throw (ex-info (str "Could not find generator for " (.getName c) " in Source's class->generator map") {}))))))
 
-(defn -nextNullable
+(defn -nullable
   ([this ^Generator g] (undertaker/frequency [[20 #(.apply g this)
                                                1 (constantly nil)]])))
 

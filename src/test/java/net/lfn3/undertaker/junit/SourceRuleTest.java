@@ -377,7 +377,7 @@ public class SourceRuleTest {
 
     @Test
     public void canGetNullable() {
-        final String nullableString = source.nextNullable(StringSource::nextString);
+        final String nullableString = source.nullable(StringSource::nextString);
         Assert.assertTrue(nullableString == null || nullableString != null);
     }
 
