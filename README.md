@@ -235,7 +235,7 @@ needed during a test. They also compose relatively well, since you can pass the 
 
 One thing you might have noticed in the above scenario is the use of `source.generate(...)`. This is used to ensure
 the value we've tweaked by adding target price shows up in our output. What determines if the an elements appears in the
-printed output? It's got to be encased in an interval (a data structure internal to undertaker) and at the top level
+printed output? It's got to be encased in an interval (one of Undertaker's data structures) and at the top level
 (not inside another interval). You probably don't need to worry about this too much when you're writing a test.
 I'd recommend that if you encounter a test failure you go back through and add calls to generate (or the more primitive
 `pushInterval` and `popInterval` operations, which appear inside generate) as necessary to give you output that makes 
@@ -245,7 +245,21 @@ By default Undertaker doesn't show the intervals used in a particular test case.
 annotation on a test to show a *lot* more information about what exactly is going on inside Undertaker during a test,
 including the intervals used, or if you're curious and just want to see how it works.
 
-<!--TODO: More on intervals -->
+<!--TODO: How to use intervals to shrink collections -->
+
+## Acknowledgements
+
+[David R. MacIver](https://www.drmaciver.com/) for writing [Hypothesis](https://hypothesis.works/) and 
+[Hypothesis-Java](https://github.com/HypothesisWorks/hypothesis-java) without which there is approximately zero chance 
+I would have realized there was a better way of doing property testing.
+
+[Reid Draper](https://twitter.com/reiddraper), [Gary Fredericks](https://twitter.com/gfredericks_) and all of the
+[contributors](https://github.com/clojure/test.check/graphs/contributors) to 
+[test.check](https://github.com/clojure/test.check/). test.check was where I started with property testing, and the 
+place I "borrowed" big chunks of Undertaker's api from.
+
+My employer, [LMAX](https://www.lmax.com/) for paying for the significant amount time I've spent working on this thing.
+In particular [Mike Barker](https://twitter.com/mikeb2701) for doing significant rubber duck duty.
 
 ## License
 
