@@ -20,9 +20,76 @@
             [clojure.string :as str]
             [clojure.core :as core]))
 
+(defmacro get-array-fn [type-hint type-str specialize-from]
+  (let [camelcased-type-str (str (str/upper-case (first type-str)) (apply str (rest type-str)))
+        fn-name (symbol (str "-next" camelcased-type-str "Array"))
+        array-fn-name (symbol (str type-str "-array"))
+        generator-name (symbol "undertaker" type-str)
+        apply-fn (symbol (str "applyAs" camelcased-type-str))
+        function-type-hint (if (= specialize-from :java)
+                             (symbol (str "java.util.function.To" camelcased-type-str "Function"))
+                             (symbol (str "net.lfn3.undertaker.junit.primitive.functions.To" camelcased-type-str "Function")))]
+    `(defn ^{:tag type-hint} ~fn-name
+       ([_#] (~array-fn-name (undertaker/vec-of ~generator-name)))
+       ([this# ^{:tag ~function-type-hint} generator#]
+         (~array-fn-name (undertaker/vec-of #(. generator# ~apply-fn this#))))
+       ([this# ^{:tag ~function-type-hint} generator# size#]
+         (~array-fn-name (undertaker/vec-of #(. generator# ~apply-fn this#) size# size#)))
+       ([this# ^{:tag ~function-type-hint} generator# min# max#]
+         (~array-fn-name (undertaker/vec-of #(. generator# ~apply-fn this#) min# max#))))))
+
+(get-array-fn "[J" "long" :java)
+(get-array-fn "[B" "byte" :undertaker)
+(get-array-fn "[C" "char" :undertaker)
+(get-array-fn "[D" "double" :java)
+(get-array-fn "[F" "float" :undertaker)
+(get-array-fn "[I" "int" :java)
+(get-array-fn "[S" "short" :undertaker)
+(get-array-fn "[Z" "boolean" :undertaker)
+
+(defn wrap-fn-to-java-fn [f]
+  (reify
+    Function
+    (apply [_ _] (f))))
+
+(def primitive-generators
+  {Long/TYPE      undertaker/long
+   Long           undertaker/long
+   Integer/TYPE   undertaker/int
+   Integer        undertaker/int
+   Short/TYPE     undertaker/short
+   Short          undertaker/short
+   Byte/TYPE      undertaker/byte
+   Byte           undertaker/byte
+   Float/TYPE     undertaker/float
+   Float          undertaker/float
+   Double/TYPE    undertaker/double
+   Double         undertaker/double
+   Character/TYPE undertaker/char
+   Character      undertaker/char
+   Boolean/TYPE   undertaker/boolean
+   Boolean        undertaker/boolean})
+
+(def array-generators
+  {(Class/forName "[J") (partial -nextLongArray nil)
+   (Class/forName "[B") (partial -nextByteArray nil)
+   (Class/forName "[C") (partial -nextCharArray nil)
+   (Class/forName "[D") (partial -nextDoubleArray nil)
+   (Class/forName "[F") (partial -nextFloatArray nil)
+   (Class/forName "[I") (partial -nextIntArray nil)
+   (Class/forName "[S") (partial -nextShortArray nil)
+   (Class/forName "[Z") (partial -nextBooleanArray nil)})
+
+(def java-types-generators
+  {String undertaker/string})
+
+(def default-class->generator-map (->> (merge primitive-generators java-types-generators array-generators)
+                                       (map (fn [[class f]] [class (wrap-fn-to-java-fn f)]))
+                                       (into {})))
+
 (defn -init
   ([] (-init {}))
-  ([class->generator-map] [[] {:class->generator class->generator-map}]))
+  ([class->generator-map] [[] {:class->generator (merge default-class->generator-map class->generator-map)}]))
 
 (def ^:dynamic *nested* false)
 
@@ -262,34 +329,6 @@ public void %s() { ... }"
                                    (to-array))]
      (.invoke m instance generated-parameters))))
 
-
-(defmacro get-array-fn [type-hint type-str specialize-from]
-  (let [camelcased-type-str (str (str/upper-case (first type-str)) (apply str (rest type-str)))
-        fn-name (symbol (str "-next" camelcased-type-str "Array"))
-        array-fn-name (symbol (str type-str "-array"))
-        generator-name (symbol "undertaker" type-str)
-        apply-fn (symbol (str "applyAs" camelcased-type-str))
-        function-type-hint (if (= specialize-from :java)
-                             (symbol (str "java.util.function.To" camelcased-type-str "Function"))
-                             (symbol (str "net.lfn3.undertaker.junit.primitive.functions.To" camelcased-type-str "Function")))]
-    `(defn ^{:tag type-hint} ~fn-name
-       ([_#] (~array-fn-name (undertaker/vec-of ~generator-name)))
-       ([this# ^{:tag ~function-type-hint} generator#]
-         (~array-fn-name (undertaker/vec-of #(. generator# ~apply-fn this#))))
-       ([this# ^{:tag ~function-type-hint} generator# size#]
-         (~array-fn-name (undertaker/vec-of #(. generator# ~apply-fn this#) size# size#)))
-       ([this# ^{:tag ~function-type-hint} generator# min# max#]
-         (~array-fn-name (undertaker/vec-of #(. generator# ~apply-fn this#) min# max#))))))
-
-(get-array-fn "[J" "long" :java)
-(get-array-fn "[B" "byte" :undertaker)
-(get-array-fn "[C" "char" :undertaker)
-(get-array-fn "[D" "double" :java)
-(get-array-fn "[F" "float" :undertaker)
-(get-array-fn "[I" "int" :java)
-(get-array-fn "[S" "short" :undertaker)
-(get-array-fn "[Z" "boolean" :undertaker)
-
 (defn generate-array-reflectively [this array-class-string]
   (let [class (Class/forName array-class-string)]
     (-nextArray this class (partial -reflectively this class))))
@@ -299,25 +338,6 @@ public void %s() { ... }"
         generator (get class->generator class)]
     (cond
       generator (.apply generator this)
-
-      (or (= class Long) (= class Long/TYPE)) (undertaker/long)
-      (or (= class Integer) (= class Integer/TYPE)) (undertaker/int)
-      (or (= class Short) (= class Short/TYPE)) (undertaker/short)
-      (or (= class Byte) (= class Byte/TYPE)) (undertaker/byte)
-      (or (= class Float) (= class Float/TYPE)) (undertaker/float)
-      (or (= class Double) (= class Double/TYPE)) (undertaker/double)
-      (or (= class Character) (= class Character/TYPE)) (undertaker/char)
-      (or (= class Boolean) (= class Boolean/TYPE)) (undertaker/boolean)
-      (= class String) (undertaker/string)
-
-      (= class (Class/forName "[J")) (-nextLongArray this)
-      (= class (Class/forName "[B")) (-nextByteArray this)
-      (= class (Class/forName "[C")) (-nextCharArray this)
-      (= class (Class/forName "[D")) (-nextDoubleArray this)
-      (= class (Class/forName "[F")) (-nextFloatArray this)
-      (= class (Class/forName "[I")) (-nextIntArray this)
-      (= class (Class/forName "[S")) (-nextShortArray this)
-      (= class (Class/forName "[Z")) (-nextBooleanArray this)
 
       (str/starts-with? (.getName class) "[L") (->> class
                                                     (.getName)

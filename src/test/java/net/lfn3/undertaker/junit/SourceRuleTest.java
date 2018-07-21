@@ -189,6 +189,11 @@ public class SourceRuleTest {
         final long aLong = source.nextLong();
         Assert.assertTrue(aLong >= Long.MIN_VALUE);
         Assert.assertTrue(aLong <= Long.MAX_VALUE);
+
+        final long longFromClass = source.reflectively(Long.class);
+
+        Assert.assertTrue(longFromClass >= Long.MIN_VALUE);
+        Assert.assertTrue(longFromClass <= Long.MAX_VALUE);
     }
 
     @Test
