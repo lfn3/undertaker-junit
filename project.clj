@@ -3,7 +3,7 @@
   :url "http://example.com/FIXME"
   :license {:name "Apache License Version 2.0"
             :url  "http://www.apache.org/licenses/LICENSE-2.0"}
-  :dependencies [[net.lfn3/undertaker "0.1.4"]
+  :dependencies [[net.lfn3/undertaker "0.1.5"]
                  [junit "4.12"]]
 
   :plugins [[lein-junit "1.1.8"]]
