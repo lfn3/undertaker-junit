@@ -4,15 +4,16 @@
     :state state
     :implements [net.lfn3.undertaker.junit.Source]
     :init init
-    :constructors {[] []
-                   [java.util.Map] []})
+    :constructors {[]                            []
+                   [java.util.Map]               []
+                   [java.util.Map java.util.Map] []})
   (:import (org.junit.runners.model Statement)
-           (org.junit.runner Description JUnitCore Computer Request)
-           (java.util List ArrayList Map Collection Set HashMap Optional)
+           (org.junit.runner Description JUnitCore Request)
+           (java.util List Map Collection Set)
            (java.util.function Function BiFunction)
-           (java.lang.reflect Modifier Method Parameter ParameterizedType Constructor Executable TypeVariable)
+           (java.lang.reflect Modifier Method Parameter ParameterizedType Constructor Executable)
            (net.lfn3.undertaker.junit Seed Trials)
-           (net.lfn3.undertaker.junit Generator Debug SourceRule Source)
+           (net.lfn3.undertaker.junit Generator Debug Source SourceRule GenericGenerator)
            (net.lfn3.undertaker.junit.generators IntGenerator CodePoints ShortGenerator)
            (net.lfn3.undertaker.junit.primitive.functions ToBooleanFunction ToByteFunction ToCharFunction ToFloatFunction ToShortFunction))
   (:require [net.lfn3.undertaker.core :as undertaker]
@@ -88,27 +89,28 @@
                                        (into {})))
 
 (def default-class->generic-generators-map
-  {List (reify BiFunction                                   ;Assumes there's only a single element in generic-classes
+  {List (reify GenericGenerator                             ;Assumes there's only a single element in generic-classes
           (apply [_ source generic-classes]
-            (.nextList source (reify Generator
-                                (apply [_ source] (.reflectively source (first generic-classes)))))))
-   Map  (reify BiFunction
+            (.nextList ^Source source (reify Generator
+                                        (apply [_ source] (.reflectively source ^Class (first generic-classes)))))))
+   Map  (reify GenericGenerator
           (apply [_ source generic-classes]
-            (.nextMap source
+            (.nextMap ^Source source
                       (reify Generator
-                        (apply [_ source] (.reflectively source (first generic-classes))))
+                        (apply [_ source] (.reflectively source ^Class (first generic-classes))))
                       (reify Generator
-                        (apply [_ source] (.reflectively source (nth generic-classes 1)))))))
-   Set  (reify BiFunction                                   ;Assumes there's only a single element in generic-classes
+                        (apply [_ source] (.reflectively source ^Class (nth generic-classes 1)))))))
+   Set  (reify GenericGenerator                             ;Assumes there's only a single element in generic-classes
           (apply [_ source generic-classes]
-            (.nextSet source (reify Generator
-                               (apply [_ source] (.reflectively source (first generic-classes)))))))})
+            (.nextSet ^Source source (reify Generator
+                                       (apply [_ source] (.reflectively source ^Class (first generic-classes)))))))})
 
 (defn -init
   ([] (-init {}))
-  ([class->generator-map]
+  ([class->generator-map] (-init class->generator-map {}))
+  ([class->generator-map generic-class->generator-map]
    [[] {:class->generator         (merge default-class->generator-map class->generator-map)
-        :generic-class->generator (merge default-class->generic-generators-map) ;TODO: add generic map to constructor
+        :generic-class->generator (merge default-class->generic-generators-map generic-class->generator-map)
         :generic-params-map       (atom {})}]))
 
 (def ^:dynamic *nested* false)
@@ -161,34 +163,38 @@
 public void %s() { ... }"
           seed name))
 
-(defn ^Statement -apply [_ ^Statement base ^Description description]
+(defn make-run-test-fn [^JUnitCore junit ^Request test-request]
+  (fn [] (with-bindings {#'*nested* true}
+           (let [failures (.getFailures (.run junit test-request))]
+             (assert (<= (count failures) 1))               ;only one since we're only running a single method
+             (when-let [failure (first failures)]
+               (throw (.getException failure)))))))
+
+(defn process-result [result test-name debug?]
+  (when (false? (get-in result [::undertaker/initial-results ::undertaker/result]))
+    (let [message (undertaker/format-results test-name result java-seed-message debug?)
+          cause (or (get-in result [::undertaker/shrunk-results ::undertaker/cause])
+                    (get-in result [::undertaker/initial-results ::undertaker/cause]))]
+      (throw (override-delegate
+               Throwable
+               cause
+               (getMessage [] message))))))
+
+(defn ^Statement -apply [_ ^Statement base ^Description test-description]
   (proxy [Statement] []
     (evaluate []
       (if (not *nested*)                                    ;Check we're not already inside this rule
-        (let [seed (get-annotation-value Seed description (undertaker/next-seed (System/nanoTime)))
-              trials (get-annotation-value Trials description 1000)
-              debug? (get-annotation-value Debug description false)
+        (let [seed (get-annotation-value Seed test-description (undertaker/next-seed (System/nanoTime)))
+              trials (get-annotation-value Trials test-description 1000)
+              debug? (get-annotation-value Debug test-description false)
               junit (JUnitCore.)
-              class (resolve (symbol (.getClassName description)))
-              test-request (Request/method class (.getMethodName description))
+              class (Class/forName (.getClassName test-description))
+              test-request (Request/method class (.getMethodName test-description))
               result (undertaker/run-prop {:seed       seed
                                            :iterations trials
-                                           :debug debug?}
-                                          #(with-bindings {#'*nested* true}
-                                             (->> (.run junit test-request)
-                                                  (.getFailures)
-                                                  (map (fn [f] (-> (.getException f) ;TODO: process failures in a function
-                                                                   (throw))))
-                                                  (dorun))))]
-          (when (false? (get-in result [::undertaker/initial-results ::undertaker/result]))
-            (let [test-name (first (str/split (.getDisplayName description) #"\("))
-                  message (undertaker/format-results test-name result java-seed-message debug?)
-                  cause (or (get-in result [::undertaker/shrunk-results ::undertaker/cause])
-                            (get-in result [::undertaker/initial-results ::undertaker/cause]))]
-              (throw (override-delegate
-                       Throwable
-                       cause
-                       (getMessage [] message))))))
+                                           :debug      debug?}
+                                          (make-run-test-fn junit test-request))]
+          (process-result result (first (str/split (.getDisplayName test-description) #"\(")) debug?))
         (.evaluate base)))))
 
 (defn -pushInterval [_]
@@ -290,7 +296,7 @@ public void %s() { ... }"
 (defn -generate-Class
   ([this ^Class c]
    (let [{:keys [class->generator]} (.state this)]
-     (if-let [g (get class->generator c)]
+     (if-let [^Generator g (get class->generator c)]
        (undertaker/with-interval
          (.apply g this))
        (throw (ex-info (str "Could not find generator for " (.getName c) " in Source's class->generator map") {}))))))
@@ -298,9 +304,6 @@ public void %s() { ... }"
 (defn -nullable
   ([this ^Generator g] (undertaker/frequency [[20 #(.apply g this)
                                                1 (constantly nil)]])))
-
-(def generate-from-class)
-(def -reflectively-Method)
 
 (defn is-interface-we-cannot-generate [this ^Class c]
   (let [{:keys [generic-class->generator class->generator]} (.state this)]
@@ -342,6 +345,9 @@ public void %s() { ... }"
         param-type-params (mapcat map-types-to-generics params)]
     (merge already-known param-type-params)))
 
+(def generate-from-class)
+(def -reflectively-Method)
+
 (defn -reflectively
   ([this c]
    (let [is-class? (class? c)
@@ -357,16 +363,16 @@ public void %s() { ... }"
            (throw (IllegalArgumentException. (str "Can't reflectively generate: " c "Please pass a concrete class instead, "
                                                   "or add a generator for " c " to the generator map in this source"))))
          (let [^Executable constructor (if is-class?
-                             (let [constructors (get-constructors-we-can-use this c)] ;Might be a static constructor
-                               (when (empty? constructors)
-                                 (throw (IllegalArgumentException.
-                                          (str "Class " c " did not have any accessible constructors "
-                                               "with parameters we could reflectively generate that were not " c "."))))
-                               (undertaker/elements constructors))
-                             c)                             ;Assume c is a constructor
+                                         (let [constructors (get-constructors-we-can-use this c)] ;Might be a static constructor
+                                           (when (empty? constructors)
+                                             (throw (IllegalArgumentException.
+                                                      (str "Class " c " did not have any accessible constructors "
+                                                           "with parameters we could reflectively generate that were not " c "."))))
+                                           (undertaker/elements constructors))
+                                         c)                 ;Assume c is a constructor
                invokable-constructor (if (instance? Constructor constructor)
-                                        #(.newInstance constructor %1)
-                                        #(.invoke constructor nil %1))]
+                                       #(.newInstance ^Constructor constructor %1)
+                                       #(.invoke ^Method constructor nil %1))]
            (swap! generic-params-map (partial build-generic-types-map constructor))
            (->> constructor
                 (.getParameters)
@@ -375,7 +381,7 @@ public void %s() { ... }"
                 (into-array Object)
                 (invokable-constructor)))))))
   ([this ^Method m instance]
-    (-reflectively-Method this m instance)))
+   (-reflectively-Method this m instance)))
 
 (defn -reflectively-Method
   ([this ^Method m]
@@ -392,13 +398,15 @@ public void %s() { ... }"
     (-nextArray this class (partial -reflectively this class))))
 
 (defn recursively-get [m k]
-  (loop [v (get m k ::no-val)]
-     (let [n (get m v ::no-val)]
-       (if (= ::no-val n)
-         v
-         (recur n)))))
+  (if (contains? m k)
+    (loop [v (get m k)]
+      (let [n (get m v ::no-val)]
+        (if (= ::no-val n)
+          v
+          (recur n))))
+    nil))
 
-(defn resolve-type-params [this type-params]
+(defn resolve-type-params [^SourceRule this type-params]
   (if (empty? type-params)
     {}
     (let [{:keys [generic-params-map]} (.state this)]
@@ -407,7 +415,7 @@ public void %s() { ... }"
            (filter (complement nil?))))))
 
 (defn generate-from-class [this class]
-  (let [{:keys [class->generator generic-class->generator generic-params-map]} (.state this)
+  (let [{:keys [class->generator generic-class->generator]} (.state this)
         ^Function generator (get class->generator class)
         ^BiFunction generic-generator (get generic-class->generator class)
         type-params (.getTypeParameters class)
