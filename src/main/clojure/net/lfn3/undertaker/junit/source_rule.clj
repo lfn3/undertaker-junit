@@ -8,11 +8,11 @@
                    [java.util.Map] []})
   (:import (org.junit.runners.model Statement)
            (org.junit.runner Description JUnitCore Computer Request)
-           (java.util List ArrayList Map Collection Set)
+           (java.util List ArrayList Map Collection Set HashMap Optional)
            (java.util.function Function BiFunction)
-           (java.lang.reflect Modifier Method)
+           (java.lang.reflect Modifier Method Parameter ParameterizedType Constructor Executable TypeVariable)
            (net.lfn3.undertaker.junit Seed Trials)
-           (net.lfn3.undertaker.junit Generator Debug)
+           (net.lfn3.undertaker.junit Generator Debug SourceRule Source)
            (net.lfn3.undertaker.junit.generators IntGenerator CodePoints ShortGenerator)
            (net.lfn3.undertaker.junit.primitive.functions ToBooleanFunction ToByteFunction ToCharFunction ToFloatFunction ToShortFunction))
   (:require [net.lfn3.undertaker.core :as undertaker]
@@ -87,9 +87,29 @@
                                        (map (fn [[class f]] [class (wrap-fn-to-java-fn f)]))
                                        (into {})))
 
+(def default-class->generic-generators-map
+  {List (reify BiFunction                                   ;Assumes there's only a single element in generic-classes
+          (apply [_ source generic-classes]
+            (.nextList source (reify Generator
+                                (apply [_ source] (.reflectively source (first generic-classes)))))))
+   Map  (reify BiFunction
+          (apply [_ source generic-classes]
+            (.nextMap source
+                      (reify Generator
+                        (apply [_ source] (.reflectively source (first generic-classes))))
+                      (reify Generator
+                        (apply [_ source] (.reflectively source (nth generic-classes 1)))))))
+   Set  (reify BiFunction                                   ;Assumes there's only a single element in generic-classes
+          (apply [_ source generic-classes]
+            (.nextSet source (reify Generator
+                               (apply [_ source] (.reflectively source (first generic-classes)))))))})
+
 (defn -init
   ([] (-init {}))
-  ([class->generator-map] [[] {:class->generator (merge default-class->generator-map class->generator-map)}]))
+  ([class->generator-map]
+   [[] {:class->generator         (merge default-class->generator-map class->generator-map)
+        :generic-class->generator (merge default-class->generic-generators-map) ;TODO: add generic map to constructor
+        :generic-params-map       (atom {})}]))
 
 (def ^:dynamic *nested* false)
 
@@ -237,7 +257,7 @@ public void %s() { ... }"
 (defn ^List -nextList
   ([this ^Function generator] (-nextList this generator 0 64))
   ([this ^Function generator size] (-nextList this generator size size))
-  ([this ^Function generator min max] (ArrayList. (undertaker/vec-of #(.apply generator this) min max))))
+  ([this ^Function generator min max] (undertaker/vec-of #(.apply generator this) min max)))
 
 (defn ^Map -nextMap
   ([this ^Function keyGen valGen] (-nextMap this keyGen valGen 0 undertaker/default-collection-max-size))
@@ -282,9 +302,50 @@ public void %s() { ... }"
 (def generate-from-class)
 (def -reflectively-Method)
 
+(defn is-interface-we-cannot-generate [this ^Class c]
+  (let [{:keys [generic-class->generator class->generator]} (.state this)]
+    (and (.isInterface c)
+         (not (get generic-class->generator c))
+         (not (get class->generator c)))))
+
+(defn get-static-constructors [^Class c]
+  (->> c
+       (.getMethods)
+       (filter #(-> (.getModifiers %1)
+                    (Modifier/isStatic)))
+       (filter #(-> (.getReturnType %1)
+                    (= c)))))
+
+(defn get-constructors-we-can-use [this ^Class c]
+  (merge (->> c
+              (.getConstructors)
+              (concat (get-static-constructors c))
+              (filter #(->> %1
+                            (.getParameters)
+                            (map (fn [p] (.getType p)))
+                            (not-any? (fn [parameter-class]
+                                        (or (is-interface-we-cannot-generate this parameter-class)
+                                            (= c parameter-class)))))))))
+
+(defn get-type-params [^Parameter param] (.getTypeParameters (.getType param)))
+
+(defn get-generic-types [^Parameter param]
+  (let [^ParameterizedType maybe-parameterized (.getParameterizedType param)]
+    (when (instance? ParameterizedType maybe-parameterized)
+      (.getActualTypeArguments maybe-parameterized))))
+
+(defn map-types-to-generics [^Parameter param]
+  (zipmap (get-type-params param) (get-generic-types param)))
+
+(defn build-generic-types-map [^Executable c already-known]
+  (let [params (.getParameters c)
+        param-type-params (mapcat map-types-to-generics params)]
+    (merge already-known param-type-params)))
+
 (defn -reflectively
   ([this c]
    (let [is-class? (class? c)
+         {:keys [generic-params-map]} (.state this)
          generated (and is-class? (generate-from-class this c))
          method? (instance? Method c)]
      (cond
@@ -292,30 +353,27 @@ public void %s() { ... }"
        (and is-class? (not= ::not-genned generated)) generated
        :default
        (do
-         (when (and is-class? (.isInterface c))
-           (throw (IllegalArgumentException. (str "Can't reflectively generate an interface. "
-                                                  "Please pass a concrete class instead of " c))))
-         (let [constructor (if is-class?
-                             (let [constructors (->> c
-                                                     (.getConstructors)
-                                                     (filter #(->> %1
-                                                                   (.getParameters)
-                                                                   (map (fn [p] (.getType p)))
-                                                                   (not-any? (fn [parameter-class]
-                                                                               (or (.isInterface parameter-class)
-                                                                                   (= c parameter-class)))))))]
+         (when (and is-class? (is-interface-we-cannot-generate this c))
+           (throw (IllegalArgumentException. (str "Can't reflectively generate: " c "Please pass a concrete class instead, "
+                                                  "or add a generator for " c " to the generator map in this source"))))
+         (let [^Executable constructor (if is-class?
+                             (let [constructors (get-constructors-we-can-use this c)] ;Might be a static constructor
                                (when (empty? constructors)
                                  (throw (IllegalArgumentException.
-                                          (str "Class " c " did not have any public constructors "
-                                               "with only concrete parameters that were not " c "."))))
+                                          (str "Class " c " did not have any accessible constructors "
+                                               "with parameters we could reflectively generate that were not " c "."))))
                                (undertaker/elements constructors))
-                             c)]                            ;Assume c is a constructor
+                             c)                             ;Assume c is a constructor
+               invokable-constructor (if (instance? Constructor constructor)
+                                        #(.newInstance constructor %1)
+                                        #(.invoke constructor nil %1))]
+           (swap! generic-params-map (partial build-generic-types-map constructor))
            (->> constructor
                 (.getParameters)
                 (map #(.getType %1))
                 (map #(-reflectively this %1))
                 (into-array Object)
-                (.newInstance constructor)))))))
+                (invokable-constructor)))))))
   ([this ^Method m instance]
     (-reflectively-Method this m instance)))
 
@@ -333,18 +391,37 @@ public void %s() { ... }"
   (let [class (Class/forName array-class-string)]
     (-nextArray this class (partial -reflectively this class))))
 
+(defn recursively-get [m k]
+  (loop [v (get m k ::no-val)]
+     (let [n (get m v ::no-val)]
+       (if (= ::no-val n)
+         v
+         (recur n)))))
+
+(defn resolve-type-params [this type-params]
+  (if (empty? type-params)
+    {}
+    (let [{:keys [generic-params-map]} (.state this)]
+      (->> type-params
+           (map (partial recursively-get @generic-params-map))
+           (filter (complement nil?))))))
+
 (defn generate-from-class [this class]
-  (let [{:keys [class->generator]} (.state this)
-        generator (get class->generator class)]
+  (let [{:keys [class->generator generic-class->generator generic-params-map]} (.state this)
+        ^Function generator (get class->generator class)
+        ^BiFunction generic-generator (get generic-class->generator class)
+        type-params (.getTypeParameters class)
+        resolved-type-params (resolve-type-params this type-params)
+        enough-resolved-type-params? (= (count type-params) (count resolved-type-params))]
     (cond
       generator (.apply generator this)
-
+      (and generic-generator
+           enough-resolved-type-params?) (.apply generic-generator this resolved-type-params)
       (str/starts-with? (.getName class) "[L") (->> class
                                                     (.getName)
                                                     (drop 2)
                                                     (apply str)
                                                     (generate-array-reflectively this))
-
       (.isEnum class) (-nextEnum this class)
 
       :default ::not-genned)))

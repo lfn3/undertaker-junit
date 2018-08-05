@@ -3,11 +3,9 @@ package net.lfn3.undertaker.junit;
 import net.lfn3.undertaker.junit.generators.CodePoints;
 import net.lfn3.undertaker.junit.primitive.functions.ToByteFunction;
 import net.lfn3.undertaker.junit.sources.*;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 
+import javax.swing.text.html.Option;
 import java.time.Instant;
 import java.util.*;
 
@@ -399,7 +397,69 @@ public class SourceRuleTest {
     public void canGenerateWithNew() {
         final NewClass n = source.generate(NewClass::new);
         Assert.assertTrue(n != null);
-        Assert.assertTrue(0 <= n.anInt );
+        Assert.assertTrue(0 <= n.anInt);
+    }
+
+    @Test
+    public void canReflectivelyGenerateClassesWithGenerics() {
+        final TrickyGenericsWrapper classWithTrickyGenerics = source.reflectively(TrickyGenericsWrapper.class);
+
+        Assert.assertNotNull(classWithTrickyGenerics);
+        Assert.assertNotNull(classWithTrickyGenerics.classWithTrickyGenerics.i);
+        Assert.assertNotNull(classWithTrickyGenerics.classWithTrickyGenerics.listNewClass);
+        Assert.assertNotNull(classWithTrickyGenerics.classWithTrickyGenerics.optionalInt);
+        Assert.assertNotNull(classWithTrickyGenerics.classWithTrickyGenerics.optionalString);
+
+        final WithGeneric classWithGenerics = source.reflectively(WithGeneric.class);
+
+        Assert.assertNotNull(classWithGenerics);
+    }
+
+    @Test
+    public void canReflectivelyGenerateAClassOnlyStaticConstructors() {
+        ClassWithStaticConstructor staticy = source.reflectively(ClassWithStaticConstructor.class);
+
+        Assert.assertNotNull(staticy);
+    }
+
+    public static class WithGeneric
+    {
+        public WithGeneric(Map<String, Integer> aMap)
+        {
+
+        }
+    }
+
+    public static class TrickyGenericsWrapper
+    {
+        final ClassWithTrickyGenerics<String, Integer, GeneratorMapTestClass> classWithTrickyGenerics;
+
+
+        public TrickyGenericsWrapper(ClassWithTrickyGenerics<String, Integer, GeneratorMapTestClass> classWithTrickyGenerics) {
+            this.classWithTrickyGenerics = classWithTrickyGenerics;
+        }
+    }
+
+    public static class ClassWithTrickyGenerics<T, Z, V>
+    {
+        Integer i;
+        Optional<T> optionalString;
+        Optional<Z> optionalInt;
+        List<V> listNewClass;
+
+        public ClassWithTrickyGenerics(Integer anInt, Optional<T> optionalString) {
+            this.i = anInt;
+            this.optionalString = optionalString;
+            this.optionalInt = Optional.empty();
+            this.listNewClass = Collections.emptyList();
+        }
+
+        public ClassWithTrickyGenerics(Optional<Z> optionalInt, List<V> listNewClass) {
+            this.i = 0;
+            this.optionalString = Optional.empty();
+            this.optionalInt = optionalInt;
+            this.listNewClass = listNewClass;
+        }
     }
 
     public class NewClass
