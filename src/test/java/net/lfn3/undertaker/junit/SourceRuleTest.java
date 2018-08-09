@@ -3,9 +3,13 @@ package net.lfn3.undertaker.junit;
 import net.lfn3.undertaker.junit.generators.CodePoints;
 import net.lfn3.undertaker.junit.primitive.functions.ToByteFunction;
 import net.lfn3.undertaker.junit.sources.*;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
-import javax.swing.text.html.Option;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.*;
 
@@ -422,6 +426,28 @@ public class SourceRuleTest {
         Assert.assertNotNull(staticy);
     }
 
+    @Test
+    public void canReflectivelyGenerateAClassWithItsConstructor() throws Exception {
+        Constructor<ClassWithConstructor> cons = ClassWithConstructor.class.getConstructor(GeneratorMapTestClass.class);
+        ClassWithConstructor c = source.reflectively(cons);
+
+        Assert.assertNotNull(c);
+    }
+    
+    @Test 
+    public void canReflectivelyInvokeAMethod() throws Exception
+    {
+        Method m = ClassWithConstructor.class.getDeclaredMethod("AMethod", Integer.TYPE);
+        String str = source.reflectively(m);
+
+        final int i = Integer.parseInt(str);
+
+        ClassWithConstructor c = new ClassWithConstructor(new GeneratorMapTestClass("Meh"));
+        String str2 = source.reflectively(m, c);
+
+        final int i2 = Integer.parseInt(str2);
+    }
+
     public static class WithGeneric
     {
         public WithGeneric(Map<String, Integer> aMap)
@@ -484,6 +510,11 @@ public class SourceRuleTest {
     public static class ClassWithConstructor {
         public ClassWithConstructor(GeneratorMapTestClass c) {
         }
+        
+        public String AMethod(int i)
+        {
+            return Integer.toString(i);
+        }    
     }
 
     public static class ClassWithStaticConstructor {
