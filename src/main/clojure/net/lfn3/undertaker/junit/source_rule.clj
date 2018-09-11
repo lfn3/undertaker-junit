@@ -290,14 +290,14 @@ public void %s() { ... }"
   ([_ ^Collection c] (undertaker/elements c)))
 
 (defn -generate
-  ([this ^Generator g] (undertaker/with-compound-interval       ;TODO: Not sure about this
+  ([this ^Generator g] (undertaker/with-compound-interval   ;TODO: Not sure about this
                          (.apply g this))))
 
 (defn -generate-Class
   ([this ^Class c]
    (let [{:keys [class->generator]} (.state this)]
      (if-let [^Generator g (get class->generator c)]
-       (undertaker/with-compound-interval                       ;TODO: or this
+       (undertaker/with-compound-interval                   ;TODO: or this
          (.apply g this))
        (throw (ex-info (str "Could not find generator for " (.getName c) " in Source's class->generator map") {}))))))
 
@@ -347,7 +347,6 @@ public void %s() { ... }"
         param-type-params (mapcat map-types-to-generics params)]
     (merge already-known param-type-params)))
 
-
 (defn generate-array-reflectively [this array-class-string]
   (let [class (Class/forName array-class-string)]
     (-nextArray this class #(.reflectively this class %1))))
@@ -389,51 +388,42 @@ public void %s() { ... }"
 
       :default ::not-genned)))
 
+(def -reflectively-Class)
 
-(defn -reflectively-Class
-  ([this c]
-   (let [{:keys [generic-params-map]} (.state this)
-         generated (generate-from-class this c)]
-     (if (not= ::not-genned generated)
-       generated
-       (do
-         (when (is-interface-we-cannot-generate this c)
-           (throw (IllegalArgumentException. (str "Can't reflectively generate: " c "Please pass a concrete class instead, "
-                                                  "or add a generator for " c " to the generator map in this source"))))
-         (let [constructors (get-constructors-we-can-use this c)
-               static-constructors (get-static-constructors this c)
-               _ (when (and (empty? constructors) (empty? static-constructors))
-                   (throw (IllegalArgumentException.
-                            (str "Class " c " did not have any accessible constructors "
-                                 "with parameters we could reflectively generate that were not " c "."))))
-               selected-constructor (undertaker/elements (concat constructors static-constructors))
-               invokable-constructor (if (some #{selected-constructor} constructors)
-                                       #(.newInstance ^Constructor selected-constructor %1)
-                                       #(.invoke ^Method selected-constructor nil %1))]
-           (swap! generic-params-map (partial build-generic-types-map selected-constructor))
-           (->> selected-constructor
-                (.getParameters)
-                (map #(.getType %1))
-                (map #(.reflectively this %1))
-                (into-array Object)
-                (invokable-constructor))))))))
+(defn get-parameter-types [this ^Executable x]
+  (->> x
+       (.getParameters)
+       (map #(.getType %1))
+       (map #(-reflectively-Class this %1))
+       (into-array Object)))
 
 (defn -reflectively-Constructor
   ([this ^Constructor c]
-   (->> c
-        (.getParameters)
-        (map #(.getType %1))
-        (map #(.reflectively this %1))
-        (into-array Object)
-        (.newInstance c))))
-
-(defn -reflectively-Method
-  ([this ^Method m] (.reflectively this m (.reflectively this (.getDeclaringClass m)))))
+   (let [{:keys [generic-params-map]} (.state this)]
+     (swap! generic-params-map (partial build-generic-types-map c)))
+   (.newInstance c (get-parameter-types this c))))
 
 (defn -reflectively-Method-Object
   ([this ^Method m instance]
-   (let [generated-parameters (->> (.getParameters m)
-                                   (map #(.getType %1))
-                                   (map #(.reflectively this %1))
-                                   (to-array))]
-     (.invoke m instance generated-parameters))))
+   (.invoke m instance (get-parameter-types this m))))
+
+(defn -reflectively-Method
+  ([this ^Method m]
+   (-reflectively-Method-Object this m (-reflectively-Class this (.getDeclaringClass m)))))
+
+(defn -reflectively-Class
+  ([this ^Class c]
+   (let [generated (generate-from-class this c)]
+     (if-not (= ::not-genned generated)
+       generated
+       (let [constructors (concat (get-constructors-we-can-use this c) (get-static-constructors this c))
+             chosen (undertaker/elements constructors)]     ;Might be a static constructor
+         (when (nil? chosen)
+           (throw (IllegalArgumentException.
+                    (str "Class " c " did not have any accessible constructors with parameters we could reflectively "
+                         "generate that were not " c "." \newline
+                         "If " c " is not a concrete class, consider passing a concrete class, or providing a "
+                         "default generator to use for " c " in the generator map when constructing this Source."))))
+         (if (instance? Constructor chosen)
+           (-reflectively-Constructor this chosen)
+           (-reflectively-Method-Object this chosen nil)))))))
