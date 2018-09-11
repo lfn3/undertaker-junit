@@ -231,7 +231,7 @@ public void %s() { ... }"
 (defn ^char -nextChar
   ([_] (undertaker/char))
   ([this code-point-gen]
-   (undertaker/with-interval
+   (undertaker/with-leaf-interval
      (core/unchecked-char (.applyAsShort code-point-gen this)))))
 
 (defn ^String -nextString
@@ -239,7 +239,7 @@ public void %s() { ... }"
   ([this ^ShortGenerator intGen] (-nextString this intGen 0 undertaker/default-string-max-size))
   ([this ^ShortGenerator intGen size] (-nextString this intGen size size))
   ([this ^ShortGenerator intGen min max]
-   (undertaker/with-interval
+   (undertaker/with-compound-interval
      (->> (undertaker/vec-of #(.applyAsShort intGen this) min max)
           (map unchecked-char)
           (char-array)
@@ -290,14 +290,14 @@ public void %s() { ... }"
   ([_ ^Collection c] (undertaker/elements c)))
 
 (defn -generate
-  ([this ^Generator g] (undertaker/with-interval
+  ([this ^Generator g] (undertaker/with-compound-interval       ;TODO: Not sure about this
                          (.apply g this))))
 
 (defn -generate-Class
   ([this ^Class c]
    (let [{:keys [class->generator]} (.state this)]
      (if-let [^Generator g (get class->generator c)]
-       (undertaker/with-interval
+       (undertaker/with-compound-interval                       ;TODO: or this
          (.apply g this))
        (throw (ex-info (str "Could not find generator for " (.getName c) " in Source's class->generator map") {}))))))
 
