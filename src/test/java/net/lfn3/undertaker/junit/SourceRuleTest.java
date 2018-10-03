@@ -448,6 +448,16 @@ public class SourceRuleTest {
         final int i2 = Integer.parseInt(str2);
     }
 
+    @Test
+    public void canHandleSimpleGenericCase() {
+        WrapsOptional o = source.reflectively(WrapsOptional.class);
+
+        if (o.optional.isPresent())
+        {
+            Assert.assertEquals(o.optional.get().getClass(), String.class);
+        }
+    }
+
     public static class WithGeneric
     {
         public WithGeneric(Map<String, Integer> aMap)
@@ -485,6 +495,16 @@ public class SourceRuleTest {
             this.optionalString = Optional.empty();
             this.optionalInt = optionalInt;
             this.listNewClass = listNewClass;
+        }
+    }
+
+    public static class WrapsOptional
+    {
+        final Optional<String> optional;
+
+        public WrapsOptional(Optional<String> s)
+        {
+            this.optional = s;
         }
     }
 

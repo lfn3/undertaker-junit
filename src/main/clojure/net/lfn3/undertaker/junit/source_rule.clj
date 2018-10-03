@@ -198,7 +198,8 @@ public void %s() { ... }"
         (.evaluate base)))))
 
 (defn -pushInterval [_]
-  (source/push-interval undertaker/*source*))
+  ;TODO (source/push-interval undertaker/*source* {})
+  )
 
 (defn -popInterval [_ generated-value]
   (source/pop-interval undertaker/*source* generated-value))
@@ -342,10 +343,18 @@ public void %s() { ... }"
 (defn map-types-to-generics [^Parameter param]
   (zipmap (get-type-params param) (get-generic-types param)))
 
-(defn build-generic-types-map [^Executable c already-known]
-  (let [params (.getParameters c)
-        param-type-params (mapcat map-types-to-generics params)]
-    (merge already-known param-type-params)))
+(defn build-generic-types-map [already-known ^Executable c]
+  (->> c
+       (.getGenericParameterTypes)
+       (filter (partial instance? ParameterizedType))
+       (map (juxt #(-> %1 .getRawType .getTypeParameters)
+                  #(-> %1 .getActualTypeArguments)))
+       (map (partial apply zipmap))
+       (apply merge already-known))
+  #_(->> c
+       (.getParameters)
+       (mapcat map-types-to-generics)
+       (merge already-known)))
 
 (defn generate-array-reflectively [this array-class-string]
   (let [class (Class/forName array-class-string)]
@@ -373,6 +382,7 @@ public void %s() { ... }"
         ^Function generator (get class->generator class)
         ^BiFunction generic-generator (get generic-class->generator class)
         type-params (.getTypeParameters class)
+        ;TODO: write test where constructor doesn't have the same number of types as the class?
         resolved-type-params (resolve-type-params this type-params)
         enough-resolved-type-params? (= (count type-params) (count resolved-type-params))]
     (cond
@@ -390,25 +400,84 @@ public void %s() { ... }"
 
 (def -reflectively-Class)
 
-(defn get-parameter-types [this ^Executable x]
-  (->> x
-       (.getParameters)
-       (map #(.getType %1))
-       (map #(-reflectively-Class this %1))
-       (into-array Object)))
+(defn match-to-parameters [parameters generic-parameters]
+  (loop [generic-parameters generic-parameters
+         parameters parameters
+         result []]
+    (if (first parameters)
+      (let [candidate (first generic-parameters)
+            param-type (.getType (first parameters))
+            matched? (and (instance? ParameterizedType candidate)
+                          (= (.getRawType candidate) param-type))]
+        (if matched?
+          (recur (rest generic-parameters)
+                 (rest parameters)
+                 (conj result candidate))
+          (recur generic-parameters
+                 (rest parameters)
+                 (conj result nil))))
+      result)))
+
+(defn pick-constructor-or-throw [this ^Class c]
+  (let [constructors (concat (get-constructors-we-can-use this c) (get-static-constructors this c))
+        chosen (undertaker/elements constructors)]     ;Might be a static constructor
+    (when (nil? chosen)
+      (throw (IllegalArgumentException.
+               (str "Class " c " did not have any accessible constructors with parameters we could reflectively "
+                    "generate that were not " c "." \newline
+                    "If " c " is not a concrete class, consider passing a concrete class, or providing a "
+                    "default generator to use for " c " in the generator map when constructing this Source."))))
+    chosen))
+
+(defn build-parameters-with-generics [this ^Executable x type-param-to-type]
+  )
+
+(defn map-to-type-vars [^ParameterizedType t]
+  (let [tps (map #(.getName %1) (.getTypeParameters ^Class (.getRawType t)))
+        args (.getActualTypeArguments t)]
+    (zipmap tps args)))
+
+(defn -reflectively-ParameterizedType [this ^ParameterizedType t]
+  (let [chosen (pick-constructor-or-throw this (.getRawType t))
+        type-var->type-arg (map-to-type-vars t)]
+    (println type-var->type-arg)
+
+    ;(println (map identity (.getTypeParameters ^Class (.getRawType t))))
+    ;TODO: if this is just a class, kick it onto the normal class generator
+    (println (map (partial map identity) (map #(.getActualTypeArguments %1) (.getGenericParameterTypes chosen))))
+    (println (map identity (map #(.getParameterizedType %1) (.getParameters chosen))))
+    ;(println (map identity (.getActualTypeArguments t)))
+    ))
+
+(defn build-parameters [this ^Executable x]
+  (let [params (.getParameters x)
+        matched-params (match-to-parameters params (.getGenericParameterTypes x))]
+    (prn (map identity params))
+    (prn matched-params)
+    (println "============")
+    (->> params
+         (map #(.getType %1))
+         (map-indexed #(if-let [^ParameterizedType parameterized (get matched-params %1)]
+                         (-reflectively-ParameterizedType this parameterized)
+                         (-reflectively-Class this %2)))
+         (into-array Object))))
 
 (defn -reflectively-Constructor
   ([this ^Constructor c]
    (let [{:keys [generic-params-map]} (.state this)]
-     (swap! generic-params-map (partial build-generic-types-map c)))
-   (.newInstance c (get-parameter-types this c))))
+     (swap! generic-params-map build-generic-types-map c))
+   (.newInstance c (build-parameters this c))))
 
 (defn -reflectively-Method-Object
   ([this ^Method m instance]
-   (.invoke m instance (get-parameter-types this m))))
+   (let [{:keys [generic-params-map]} (.state this)]
+     (swap! generic-params-map build-generic-types-map m))
+   (.invoke m instance (build-parameters this m))))
 
 (defn -reflectively-Method
   ([this ^Method m]
+   (let [{:keys [generic-params-map]} (.state this)]
+     (swap! generic-params-map build-generic-types-map m))
    (-reflectively-Method-Object this m (-reflectively-Class this (.getDeclaringClass m)))))
 
 (defn -reflectively-Class
@@ -416,14 +485,7 @@ public void %s() { ... }"
    (let [generated (generate-from-class this c)]
      (if-not (= ::not-genned generated)
        generated
-       (let [constructors (concat (get-constructors-we-can-use this c) (get-static-constructors this c))
-             chosen (undertaker/elements constructors)]     ;Might be a static constructor
-         (when (nil? chosen)
-           (throw (IllegalArgumentException.
-                    (str "Class " c " did not have any accessible constructors with parameters we could reflectively "
-                         "generate that were not " c "." \newline
-                         "If " c " is not a concrete class, consider passing a concrete class, or providing a "
-                         "default generator to use for " c " in the generator map when constructing this Source."))))
+       (let [chosen (pick-constructor-or-throw this c)]     ;Might be a static constructor
          (if (instance? Constructor chosen)
            (-reflectively-Constructor this chosen)
            (-reflectively-Method-Object this chosen nil)))))))
